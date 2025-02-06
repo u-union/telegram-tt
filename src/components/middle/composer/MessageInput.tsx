@@ -11,7 +11,7 @@ import type { ApiInputMessageReplyInfo } from '../../../api/types';
 import type { IAnchorPosition, ISettings, ThreadId } from '../../../types';
 import type { Signal } from '../../../util/signals';
 
-import { EDITABLE_INPUT_ID } from '../../../config';
+import { EDITABLE_INPUT_ID, INPUT_WRAPPER_CLASS } from '../../../config';
 import { requestForcedReflow, requestMutation } from '../../../lib/fasterdom/fasterdom';
 import { selectCanPlayAnimatedEmojis, selectDraft, selectIsInSelectMode } from '../../../global/selectors';
 import buildClassName from '../../../util/buildClassName';
@@ -44,7 +44,6 @@ const FOCUS_DELAY_MS = 350;
 const TRANSITION_DURATION_FACTOR = 50;
 
 const SCROLLER_CLASS = 'input-scroller';
-const INPUT_WRAPPER_CLASS = 'message-input-wrapper';
 
 type OwnProps = {
   ref?: RefObject<HTMLDivElement>;
@@ -179,14 +178,17 @@ const MessageInput: FC<OwnProps & StateProps> = ({
 
   const [shouldDisplayTimer, setShouldDisplayTimer] = useState(false);
 
+  // Done
   useEffect(() => {
     setShouldDisplayTimer(Boolean(timedPlaceholderLangKey && timedPlaceholderDate));
   }, [timedPlaceholderDate, timedPlaceholderLangKey]);
 
+  // Done
   const handleTimerEnd = useLastCallback(() => {
     setShouldDisplayTimer(false);
   });
 
+  // To add
   useInputCustomEmojis(
     getHtml,
     inputRef,
@@ -199,6 +201,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     isActive,
   );
 
+  // Done
   const maxInputHeight = isAttachmentModalInput
     ? MAX_ATTACHMENT_MODAL_INPUT_HEIGHT
     : isStoryInput ? MAX_STORY_MODAL_INPUT_HEIGHT : (isMobile ? 256 : 416);
@@ -235,11 +238,14 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     });
   });
 
+  // Deleted
   useLayoutEffect(() => {
     if (!isAttachmentModalInput) return;
     updateInputHeight(false);
   }, [isAttachmentModalInput, updateInputHeight]);
 
+
+  // Done
   const htmlRef = useRef(getHtml());
   useLayoutEffect(() => {
     const html = isActive ? getHtml() : '';
@@ -259,8 +265,11 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     }
   }, [getHtml, isActive, updateInputHeight]);
 
+  // Never used
   const chatIdRef = useRef(chatId);
   chatIdRef.current = chatId;
+
+  /** Done */
   const focusInput = useLastCallback(() => {
     if (!inputRef.current || isNeedPremium) {
       return;
@@ -273,18 +282,22 @@ const MessageInput: FC<OwnProps & StateProps> = ({
 
     focusEditableElement(inputRef.current!);
   });
+  // **********
 
+  // Done
   const handleCloseTextFormatter = useLastCallback(() => {
     closeTextFormatter();
     clearSelection();
   });
 
+  // Done
   function checkSelection() {
     // Disable the formatter on iOS devices for now.
     if (IS_IOS) {
       return false;
     }
 
+    // Close the formatter if there is no selection
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount || isContextMenuOpenRef.current) {
       closeTextFormatter();
@@ -294,6 +307,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
       return false;
     }
 
+    // Close the formatter if the selection is not inside the input, or if the selection is empty, or if the selection is an emoji
     const selectionRange = selection.getRangeAt(0);
     const selectedText = selectionRange.toString().trim();
     if (
@@ -307,9 +321,11 @@ const MessageInput: FC<OwnProps & StateProps> = ({
       return false;
     }
 
+    // Else, the selection is valid
     return true;
   }
 
+  // Done
   function processSelection() {
     if (!checkSelection()) {
       return;
@@ -340,6 +356,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     openTextFormatter();
   }
 
+  // Done
   function processSelectionWithTimeout() {
     if (selectionTimeoutRef.current) {
       window.clearTimeout(selectionTimeoutRef.current);
@@ -348,6 +365,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     selectionTimeoutRef.current = window.setTimeout(processSelection, SELECTION_RECALCULATE_DELAY_MS);
   }
 
+  // Done
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     if (e.button !== 2) {
       const listenerEl = e.currentTarget.closest(`.${INPUT_WRAPPER_CLASS}`) || e.target;
@@ -362,6 +380,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
 
     isContextMenuOpenRef.current = true;
 
+    // Better code here
     function handleCloseContextMenu(e2: KeyboardEvent | MouseEvent) {
       if (e2 instanceof KeyboardEvent && e2.key !== 'Esc' && e2.key !== 'Escape') {
         return;
@@ -379,6 +398,8 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     document.addEventListener('keydown', handleCloseContextMenu);
   }
 
+  // Done
+  // Listens for keydown events to handle shortcuts
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     // https://levelup.gitconnected.com/javascript-events-handlers-keyboard-and-load-events-1b3e46a6b0c3#1960
     const { isComposing } = e;
@@ -414,7 +435,9 @@ const MessageInput: FC<OwnProps & StateProps> = ({
       e.target.addEventListener('keyup', processSelectionWithTimeout, { once: true });
     }
   }
+  //****************
 
+  // Done
   function handleChange(e: ChangeEvent<HTMLDivElement>) {
     const { innerHTML, textContent } = e.currentTarget;
 
@@ -436,6 +459,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
       }
     }
   }
+  // **********
 
   function handleAndroidContextMenu(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     if (!checkSelection()) {
@@ -454,13 +478,17 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     }
   }
 
+  // Done
   function handleClick() {
     if (isAttachmentModalInput || canSendPlainText || (isStoryInput && isNeedPremium)) return;
     showAllowedMessageTypesNotification({ chatId });
   }
+  // **********
 
+  // Done
   const handleOpenPremiumModal = useLastCallback(() => openPremiumModal());
 
+  // DONE
   useEffect(() => {
     if (IS_TOUCH_ENV) {
       return;
@@ -471,6 +499,8 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     }
   }, [chatId, focusInput, replyInfo, canAutoFocus]);
 
+
+  // Effect to redirect edited message to the input
   useEffect(() => {
     if (
       !chatId
@@ -525,6 +555,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     };
   }, [chatId, editableInputId, isMobileDevice, isSelectModeActive, noFocusInterception]);
 
+  // Done
   useEffect(() => {
     const captureFirstTab = debounce((e: KeyboardEvent) => {
       if (e.key === 'Tab' && !getIsDirectTextInputDisabled()) {
@@ -536,12 +567,17 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     return captureKeyboardListeners({ onTab: captureFirstTab });
   }, [focusInput]);
 
+  /********************************************************************/
+  /**  Not using this  */
+  /********************************************************************/
   useEffect(() => {
     const input = inputRef.current!;
 
     function suppressFocus() {
       input.blur();
     }
+
+    suppressFocus();
 
     if (shouldSuppressFocus) {
       input.addEventListener('focus', suppressFocus);
@@ -551,6 +587,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
       input.removeEventListener('focus', suppressFocus);
     };
   }, [shouldSuppressFocus]);
+  /********************************************************************/
 
   const isTouched = useDerivedState(() => Boolean(isActive && getHtml()), [isActive, getHtml]);
 
@@ -560,6 +597,7 @@ const MessageInput: FC<OwnProps & StateProps> = ({
     shouldSuppressFocus && 'focus-disabled',
   );
 
+  // Done
   const inputScrollerContentClass = buildClassName('input-scroller-content', isNeedPremium && 'is-need-premium');
 
   return (
@@ -599,8 +637,8 @@ const MessageInput: FC<OwnProps & StateProps> = ({
             >
               {!isAttachmentModalInput && !canSendPlainText
                 && <Icon name="lock-badge" className="placeholder-icon" />}
-              {shouldDisplayTimer ? (
-                <TextTimer langKey={timedPlaceholderLangKey!} endsAt={timedPlaceholderDate!} onEnd={handleTimerEnd} />
+              {shouldDisplayTimer && timedPlaceholderDate && timedPlaceholderLangKey ? (
+                <TextTimer details={{langKey: timedPlaceholderLangKey, endsAt: timedPlaceholderDate}} onEnd={handleTimerEnd} />
               ) : placeholder}
               {isStoryInput && isNeedPremium && (
                 <Button className="unlock-button" size="tiny" color="adaptive" onClick={handleOpenPremiumModal}>

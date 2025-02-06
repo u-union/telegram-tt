@@ -1309,6 +1309,7 @@ export interface LangPair {
   'CheckPasswordTitle': undefined;
   'CheckPasswordPlaceholder': undefined;
   'CheckPasswordDescription': undefined;
+  'StoryRepliesLockedButton': undefined;
 }
 
 export interface LangPairWithVariables<V extends unknown = LangVariable> {

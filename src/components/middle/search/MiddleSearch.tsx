@@ -250,12 +250,10 @@ const MiddleSearch: FC<StateProps> = ({
     updateMiddleSearch({ chatId: chat.id, threadId, update: { requestedQuery: undefined } });
     setIsLoading(true);
 
-    requestNextMutation(() => {
-      const input = inputRef.current;
-      if (!input) return;
-      focusEditableElement(input, true, true);
-      markFocused();
-    });
+    const input = inputRef.current;
+    if (!input) return;
+    focusEditableElement(input, true, true);
+    markFocused();
   }, [chat?.id, requestedQuery, threadId]);
 
   useEffectWithPrevDeps(([prevIsActive]) => {

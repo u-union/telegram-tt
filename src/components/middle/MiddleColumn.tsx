@@ -19,7 +19,6 @@ import {
   ANIMATION_END_DELAY,
   ANONYMOUS_USER_ID,
   EDITABLE_INPUT_CSS_SELECTOR,
-  EDITABLE_INPUT_ID,
   GENERAL_TOPIC_ID,
   SUPPORTED_PHOTO_CONTENT_TYPES,
   SUPPORTED_VIDEO_CONTENT_TYPES,
@@ -237,7 +236,6 @@ function MiddleColumn({
   const [dropAreaState, setDropAreaState] = useState(DropAreaState.None);
   const [isScrollDownNeeded, setIsScrollDownShown] = useState(false);
   const isScrollDownShown = isScrollDownNeeded && (!isMobile || !hasActiveMiddleSearch);
-  const [isNotchShown, setIsNotchShown] = useState<boolean | undefined>();
   const [isUnpinModalOpen, setIsUnpinModalOpen] = useState(false);
 
   const {
@@ -294,7 +292,6 @@ function MiddleColumn({
 
   useSyncEffect(() => {
     setDropAreaState(DropAreaState.None);
-    setIsNotchShown(undefined);
   }, [chatId]);
 
   // Fix for mobile virtual keyboard
@@ -458,7 +455,6 @@ function MiddleColumn({
   const footerClassName = buildClassName(
     'middle-column-footer',
     !renderingCanPost && 'no-composer',
-    renderingCanPost && isNotchShown && !isSelectModeActive && 'with-notch',
   );
 
   useHistoryBack({
@@ -544,7 +540,6 @@ function MiddleColumn({
                 isComments={isComments}
                 canPost={renderingCanPost!}
                 onScrollDownToggle={setIsScrollDownShown}
-                onNotchToggle={setIsNotchShown}
                 isReady={isReady}
                 isContactRequirePremium={isContactRequirePremium}
                 withBottomShift={withMessageListBottomShift}
@@ -554,7 +549,7 @@ function MiddleColumn({
               <div className={footerClassName}>
                 {renderingCanPost && (
                   <Composer
-                    type="messageList"
+                    type="message"
                     chatId={renderingChatId!}
                     threadId={renderingThreadId!}
                     messageListType={renderingMessageListType!}
@@ -562,9 +557,7 @@ function MiddleColumn({
                     onDropHide={handleHideDropArea}
                     isReady={isReady}
                     isMobile={isMobile}
-                    editableInputId={EDITABLE_INPUT_ID}
                     editableInputCssSelector={EDITABLE_INPUT_CSS_SELECTOR}
-                    inputId="message-input-text"
                   />
                 )}
                 {isPinnedMessageList && canUnpin && (

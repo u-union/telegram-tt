@@ -120,13 +120,11 @@ export default function useMentionTooltip(
       const caretPosition = getCaretPosition(inputEl);
       setHtml(`${newHtml}${htmlAfterSelection}`);
 
-      requestNextMutation(() => {
-        const newCaretPosition = caretPosition + shiftCaretPosition + 1;
-        focusEditableElement(inputEl, forceFocus);
-        if (newCaretPosition >= 0) {
-          setCaretPosition(inputEl, newCaretPosition);
-        }
-      });
+      const newCaretPosition = caretPosition + shiftCaretPosition + 1;
+      focusEditableElement(inputEl, forceFocus);
+      if (newCaretPosition >= 0) {
+        setCaretPosition(inputEl, newCaretPosition);
+      }
     }
 
     setFilteredUsers(undefined);

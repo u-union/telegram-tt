@@ -14,7 +14,7 @@ import type { IconName } from '../../types/icons';
 import type { Signal } from '../../util/signals';
 import { MAIN_THREAD_ID } from '../../api/types';
 
-import { EDITABLE_STORY_INPUT_CSS_SELECTOR, EDITABLE_STORY_INPUT_ID } from '../../config';
+import { EDITABLE_STORY_INPUT_CSS_SELECTOR } from '../../config';
 import { getPeerTitle, isChatChannel, isUserId } from '../../global/helpers';
 import {
   selectChat,
@@ -885,8 +885,6 @@ function Story({
           messageListType="thread"
           isMobile={getIsMobile()}
           editableInputCssSelector={EDITABLE_STORY_INPUT_CSS_SELECTOR}
-          editableInputId={EDITABLE_STORY_INPUT_ID}
-          inputId="story-input-text"
           className={buildClassName(styles.composer, composerAppearanceAnimationClassNames)}
           inputPlaceholder={lang(isChatStory ? 'ReplyToGroupStory' : 'ReplyPrivately')}
           onForward={canShare ? handleForwardClick : undefined}

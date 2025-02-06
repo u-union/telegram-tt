@@ -62,12 +62,10 @@ const useEditing = (
     setHtml(html);
     setShouldForceShowEditing(true);
 
-    requestNextMutation(() => {
-      const messageInput = document.querySelector<HTMLDivElement>(EDITABLE_INPUT_CSS_SELECTOR);
-      if (messageInput) {
-        focusEditableElement(messageInput, true);
-      }
-    });
+    const messageInput = document.querySelector<HTMLDivElement>(EDITABLE_INPUT_CSS_SELECTOR);
+    if (messageInput) {
+      focusEditableElement(messageInput, true);
+    }
   }, [editedMessage, replyingToId, editingDraft, setHtml]);
 
   useEffect(() => {
@@ -126,17 +124,13 @@ const useEditing = (
     if (!draft) return;
 
     // Run one frame after editing draft reset
-    requestMeasure(() => {
-      setHtml(getTextWithEntitiesAsHtml(draft.text));
+    setHtml(getTextWithEntitiesAsHtml(draft.text));
 
-      // Wait one more frame until new HTML is rendered
-      requestNextMutation(() => {
-        const messageInput = document.querySelector<HTMLDivElement>(EDITABLE_INPUT_CSS_SELECTOR);
-        if (messageInput) {
-          focusEditableElement(messageInput, true);
-        }
-      });
-    });
+    // Wait one more frame until new HTML is rendered
+    const messageInput = document.querySelector<HTMLDivElement>(EDITABLE_INPUT_CSS_SELECTOR);
+    if (messageInput) {
+      focusEditableElement(messageInput, true);
+    }
   });
 
   const handleEditCancel = useLastCallback(() => {

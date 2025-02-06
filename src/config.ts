@@ -138,6 +138,7 @@ export const SEND_MESSAGE_ACTION_INTERVAL = 3000; // 3s
 export const APP_CONFIG_REFETCH_INTERVAL = 10000 * 1000;
 export const GENERAL_REFETCH_INTERVAL = 60 * 60 * 1000; // 1h
 
+export const INPUT_WRAPPER_CLASS = 'message-input-wrapper';
 export const EDITABLE_INPUT_ID = 'editable-message-text';
 export const EDITABLE_INPUT_MODAL_ID = 'editable-message-text-modal';
 export const EDITABLE_STORY_INPUT_ID = 'editable-story-input-text';

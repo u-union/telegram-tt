@@ -227,10 +227,6 @@
       }
     }
 
-    &.with-notch::before {
-      opacity: 1;
-    }
-
     html.theme-dark &::before {
       background:
         linear-gradient(

@@ -61,7 +61,6 @@ interface OwnProps {
   noAppearanceAnimation: boolean;
   isSavedDialog?: boolean;
   onScrollDownToggle: BooleanToVoidFunction;
-  onNotchToggle: AnyToVoidFunction;
   onIntersectPinnedMessage: OnIntersectPinnedMessage;
 }
 
@@ -93,7 +92,6 @@ const MessageListContent: FC<OwnProps> = ({
   noAppearanceAnimation,
   isSavedDialog,
   onScrollDownToggle,
-  onNotchToggle,
   onIntersectPinnedMessage,
 }) => {
   const { openHistoryCalendar } = getActions();
@@ -122,7 +120,6 @@ const MessageListContent: FC<OwnProps> = ({
     isViewportNewest,
     isUnread,
     onScrollDownToggle,
-    onNotchToggle,
     isReady,
   );
 

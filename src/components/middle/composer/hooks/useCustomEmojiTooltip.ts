@@ -87,9 +87,7 @@ export default function useCustomEmojiTooltip(
 
     setHtml(`${newHtml}${htmlAfterSelection}`);
 
-    requestNextMutation(() => {
-      focusEditableElement(inputEl, true, true);
-    });
+    focusEditableElement(inputEl, true, true);
   });
 
   useEffect(unmarkManuallyClosed, [unmarkManuallyClosed, getHtml]);

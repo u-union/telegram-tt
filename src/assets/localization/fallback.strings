@@ -1602,3 +1602,4 @@
 "CheckPasswordTitle" = "Enter Password";
 "CheckPasswordPlaceholder" = "Password";
 "CheckPasswordDescription" = "Please enter your password to continue.";
+"StoryRepliesLockedButton" = "Unlock";

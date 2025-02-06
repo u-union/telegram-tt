@@ -125,9 +125,7 @@ export default function useEmojiTooltip(
         ? document.querySelector<HTMLDivElement>(EDITABLE_INPUT_CSS_SELECTOR)!
         : document.getElementById(inputId) as HTMLDivElement;
 
-      requestNextMutation(() => {
-        focusEditableElement(messageInput, true, true);
-      });
+      focusEditableElement(messageInput, true, true);
     }
 
     updateFiltered(MEMO_EMPTY_ARRAY);

@@ -118,7 +118,7 @@ const StealthModeModal = ({ isOpen, stealthMode, isCurrentUserPremium } : StateP
       >
         {!isCurrentUserPremium ? lang('UnlockStealthMode')
           : isOnCooldown
-            ? (<TextTimer langKey="AvailableIn" endsAt={stealthMode!.cooldownUntil!} onEnd={handleTimerEnds} />)
+            ? (<TextTimer details={{langKey:"AvailableIn", endsAt: stealthMode!.cooldownUntil!}} onEnd={handleTimerEnds} />)
             : lang('EnableStealthMode')}
       </Button>
     </Modal>

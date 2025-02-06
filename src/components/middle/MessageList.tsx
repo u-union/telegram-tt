@@ -88,7 +88,6 @@ type OwnProps = {
   canPost: boolean;
   isReady: boolean;
   onScrollDownToggle: BooleanToVoidFunction;
-  onNotchToggle: BooleanToVoidFunction;
   withBottomShift?: boolean;
   withDefaultBg: boolean;
   onIntersectPinnedMessage: OnIntersectPinnedMessage;
@@ -180,7 +179,6 @@ const MessageList: FC<OwnProps & StateProps> = ({
   channelJoinInfo,
   onIntersectPinnedMessage,
   onScrollDownToggle,
-  onNotchToggle,
 }) => {
   const {
     loadViewportMessages, setScrollOffset, loadSponsoredMessages, loadMessageReactions, copyMessagesByIds,
@@ -718,7 +716,6 @@ const MessageList: FC<OwnProps & StateProps> = ({
           shouldRenderBotInfo={isBot}
           noAppearanceAnimation={!messageGroups || !shouldAnimateAppearanceRef.current}
           onScrollDownToggle={onScrollDownToggle}
-          onNotchToggle={onNotchToggle}
           onIntersectPinnedMessage={onIntersectPinnedMessage}
         />
       ) : (

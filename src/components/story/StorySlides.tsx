@@ -243,9 +243,7 @@ function StorySlides({
       if (offsetY < -SWIPE_Y_THRESHOLD) {
         const composer = document.getElementById(EDITABLE_STORY_INPUT_ID);
         if (composer) {
-          requestMutation(() => {
-            focusEditableElement(composer);
-          });
+          focusEditableElement(composer);
         }
         return;
       }

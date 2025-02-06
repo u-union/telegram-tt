@@ -7,15 +7,21 @@ import useInterval from '../../hooks/schedulers/useInterval';
 import useForceUpdate from '../../hooks/useForceUpdate';
 import useOldLang from '../../hooks/useOldLang';
 
-type OwnProps = {
+export type TextTimerDetails = {
   langKey: string;
   endsAt: number;
+};
+
+type OwnProps = {
+  details: TextTimerDetails;
   onEnd?: NoneToVoidFunction;
 };
 
 const UPDATE_FREQUENCY = 500; // Sometimes second gets skipped if using 1000
 
-const TextTimer: FC<OwnProps> = ({ langKey, endsAt, onEnd }) => {
+const TextTimer: FC<OwnProps> = ({ details, onEnd }) => {
+  const { langKey, endsAt } = details;
+  
   const lang = useOldLang();
   const forceUpdate = useForceUpdate();
 
