@@ -1,4 +1,4 @@
-import React, { FC, memo, RefObject, useMemo, getIsHeavyAnimating, useRef, useEffect, useLayoutEffect, useSignal, useState } from "../../../lib/teact/teact";
+import React, { FC, memo, RefObject, getIsHeavyAnimating, useRef, useEffect, useLayoutEffect, useState } from "../../../lib/teact/teact";
 import { type ChangeEvent } from "react";
 
 import useLang from "../../../hooks/useLang";
@@ -6,6 +6,7 @@ import useFlag from "../../../hooks/useFlag";
 import useAppLayout from '../../../hooks/useAppLayout';
 import useLastCallback from "../../../hooks/useLastCallback";
 import useDerivedState from "../../../hooks/useDerivedState";
+import { requestMeasure, requestMutation } from "../../../lib/fasterdom/fasterdom";
 
 import { isSelectionInsideInput } from './helpers/selection';
 
@@ -19,11 +20,10 @@ import { ComposerType } from "../../common/Composer";
 
 import buildClassName from '../../../util/buildClassName';
 import focusEditableElement from "../../../util/focusEditableElement";
+import { setCaretPosition } from "../../../util/selection";
 import { Signal } from "../../../util/signals";
 import parseEmojiOnlyString from '../../../util/emoji/parseEmojiOnlyString';
-import {
-  IS_ANDROID, IS_EMOJI_SUPPORTED, IS_IOS, IS_TOUCH_ENV,
-} from '../../../util/windowEnvironment';
+import { IS_ANDROID, IS_EMOJI_SUPPORTED, IS_IOS, IS_TOUCH_ENV } from '../../../util/windowEnvironment';
 import { debounce } from "../../../util/schedulers";
 import captureKeyboardListeners from "../../../util/captureKeyboardListeners";
 
@@ -34,7 +34,6 @@ import TextFormatter from './TextFormatter.async';
 
 import './MessageInputNew.scss';
 import { INPUT_WRAPPER_CLASS } from "../../../config";
-import { requestForcedReflow, requestMeasure, requestMutation, requestNextMutation } from "../../../lib/fasterdom/fasterdom";
 
 const INPUT_SCROLLER_CLASS = 'input-scroller';
 
@@ -68,6 +67,8 @@ type OwnProps = {
   shouldSuppressTextFormatter?: boolean;
   timerPlaceholderData?: TextTimerDetails;
   onInputHtmlChange: (html: string) => void;
+  onInputHtmlUndo: () => boolean;
+  onInputHtmlRedo: () => boolean;
   onMessageSend: NoneToVoidFunction;
   // onScroll?: (event: React.UIEvent<HTMLElement>) => void;
   onInputBoxFocus?: NoneToVoidFunction;
@@ -102,6 +103,8 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   shouldSuppressTextFormatter,
   timerPlaceholderData,
   onInputHtmlChange,
+  onInputHtmlUndo,
+  onInputHtmlRedo,
   onMessageSend,
   onInputBoxFocus,
   onInputBoxBlur,
@@ -110,6 +113,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const htmlRef = useRef(getHtmlInputText());
   const inputBoxCloneRef = useRef<HTMLDivElement>(null);
   const inputScrollerCloneRef = useRef<HTMLDivElement>(null);
+  const inputBoxPlaceholderRef = useRef<HTMLDivElement>(null);
 
   const lang = useLang();
   // Is Story Input or Attachment Modal Input or neither
@@ -221,9 +225,12 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   useLayoutEffect(() => {
     const html = !hasAttachments ? getHtmlInputText() : '';
-    
+
     if (html !== inputRef.current!.innerHTML) {
-      inputRef.current!.innerHTML = html;
+      requestMutation(() => {
+        inputRef.current!.innerHTML = html;
+        setCaretPosition(inputRef.current!, html.length);
+      });
     }
 
     if (html !== inputBoxCloneRef.current!.innerHTML) {
@@ -309,6 +316,15 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     }
   });
 
+  const vibrate = (element: HTMLElement | null) => {
+    if (!element || !element.classList || element.classList.contains('vibrate-effect')) return;
+
+    requestMutation(() => element.classList.add('vibrate-effect'));
+    setTimeout(() => {
+      requestMutation(() => element.classList.remove('vibrate-effect'));
+    }, 300); // same as animation (no sense to change)
+  }
+
   /**
    * Handle the key event inside the input box
    */
@@ -317,6 +333,24 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     const inputHTML = getHtmlInputText();
 
     if (!isComposing) {
+      // Handle Ctrl/Cmd + Z/Y for undo/redo
+      if ((ctrlKey || metaKey) && (key.toLowerCase() === 'z' || key.toLowerCase() === 'y')) {
+        e.preventDefault();
+        // Redo (Ctrl/Cmd+Y) or (Ctrl/Cmd+Shift+Z)
+        if (key.toLowerCase() === 'y' || (shiftKey && key.toLowerCase() === 'z')) {
+          if (onInputHtmlRedo()) {
+            vibrate(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);
+          }
+        }
+        // Undo (Ctrl/Cmd+Z)
+        else if (key.toLowerCase() === 'z') {
+          if (onInputHtmlUndo()) {
+            vibrate(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);
+          }
+        }
+        return;
+      }
+
       // Handle ctrl/meta + ArrowUp/ArrowDown shortcuts for reply message navigation.
       if (!inputHTML && (metaKey || ctrlKey ) && (key === 'ArrowUp' || key === 'ArrowDown')) {
         const targetIndexDelta = key === 'ArrowDown' ? 1 : -1;
@@ -422,7 +456,6 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
           ref={inputRef}
           role="textbox"
           dir='auto'
-          tabIndex={0}
           contentEditable={canSendPlainText}
           onChange={handleInputBoxChange}
           onKeyDown={handleInputBoxKeyDown}
@@ -434,6 +467,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
           onBlur={!isNeedPremium ? onInputBoxBlur : undefined}
           />
           <span
+            ref={inputBoxPlaceholderRef}
             className={inputPlaceholderClass}
             dir="auto"
           >

@@ -1,6 +1,6 @@
 import type { FC } from '../../lib/teact/teact';
 import React, {
-  memo, useEffect, useMemo, useRef, useSignal, useState,
+  memo, useEffect, useMemo, useRef, useState,
 } from '../../lib/teact/teact';
 import { getActions, getGlobal, withGlobal } from '../../global';
 
@@ -45,15 +45,18 @@ import { MAIN_THREAD_ID } from '../../api/types';
 import {
   BASE_EMOJI_KEYWORD_LANG,
   DEFAULT_MAX_MESSAGE_LENGTH,
+  EDITABLE_INPUT_ID,
   EDITABLE_INPUT_MODAL_ID,
+  EDITABLE_STORY_INPUT_ID,
   HEART_REACTION,
+  INPUT_WRAPPER_CLASS,
   MAX_UPLOAD_FILEPART_SIZE,
   ONE_TIME_MEDIA_TTL_SECONDS,
   SCHEDULED_WHEN_ONLINE,
   SEND_MESSAGE_ACTION_INTERVAL,
   SERVICE_NOTIFICATIONS_USER_ID,
 } from '../../config';
-import { requestMeasure, requestNextMutation } from '../../lib/fasterdom/fasterdom';
+import { requestMeasure } from '../../lib/fasterdom/fasterdom';
 import {
   canEditMedia,
   getAllowedAttachmentOptions,
@@ -126,6 +129,7 @@ import useDerivedState from '../../hooks/useDerivedState';
 import useEffectWithPrevDeps from '../../hooks/useEffectWithPrevDeps';
 import useFlag from '../../hooks/useFlag';
 import useGetSelectionRange from '../../hooks/useGetSelectionRange';
+import useHtmlInput from './hooks/useHtmlInput';
 import useLastCallback from '../../hooks/useLastCallback';
 import useOldLang from '../../hooks/useOldLang';
 import usePreviousDeprecated from '../../hooks/usePreviousDeprecated';
@@ -174,9 +178,22 @@ import Avatar from './Avatar';
 import Icon from './icons/Icon';
 import ReactionAnimatedEmoji from './reactions/ReactionAnimatedEmoji';
 
+import MessageInputNew from '../middle/composer/MessageInputNew';
+
 import './Composer.scss';
 
-type ComposerType = 'messageList' | 'story';
+export type ComposerType = 'message' | 'story' | 'caption';
+
+export const getEditableInputID = (type: ComposerType) => {
+  switch (type) {
+    case 'message':
+      return EDITABLE_INPUT_ID;
+    case 'story':
+      return EDITABLE_STORY_INPUT_ID;
+    case 'caption':
+      return EDITABLE_INPUT_MODAL_ID;
+  }
+};
 
 type OwnProps = {
   type: ComposerType;
@@ -187,9 +204,7 @@ type OwnProps = {
   dropAreaState?: string;
   isReady: boolean;
   isMobile?: boolean;
-  inputId: string;
   editableInputCssSelector: string;
-  editableInputId: string;
   className?: string;
   inputPlaceholder?: string;
   onDropHide?: NoneToVoidFunction;
@@ -362,8 +377,6 @@ const Composer: FC<OwnProps & StateProps> = ({
   slowMode,
   shouldUpdateStickerSetOrder,
   editableInputCssSelector,
-  editableInputId,
-  inputId,
   className,
   availableReactions,
   topReactions,
@@ -422,14 +435,14 @@ const Composer: FC<OwnProps & StateProps> = ({
   // eslint-disable-next-line no-null/no-null
   const storyReactionRef = useRef<HTMLButtonElement>(null);
 
-  const [getHtml, setHtml] = useSignal('');
+  const { getHtml, setHtml, undoHtml, redoHtml, resetHtml } = useHtmlInput();
   const [isMounted, setIsMounted] = useState(false);
   const getSelectionRange = useGetSelectionRange(editableInputCssSelector);
   const lastMessageSendTimeSeconds = useRef<number>();
   const prevDropAreaState = usePreviousDeprecated(dropAreaState);
   const { width: windowWidth } = windowSize.get();
 
-  const isInMessageList = type === 'messageList';
+  const isInMessageList = type === 'message';
   const isInStoryViewer = type === 'story';
   const sendAsPeerIds = isInMessageList ? chat?.sendAsPeerIds : undefined;
   const canShowSendAs = sendAsPeerIds
@@ -451,6 +464,8 @@ const Composer: FC<OwnProps & StateProps> = ({
 
   const customEmojiNotificationNumber = useRef(0);
 
+  const editableInputId = getEditableInputID(type);
+
   const [requestCalendar, calendar] = useSchedule(
     isInMessageList && canScheduleUntilOnline,
     cancelForceShowSymbolMenu,
@@ -468,6 +483,8 @@ const Composer: FC<OwnProps & StateProps> = ({
 
   useEffect(() => {
     lastMessageSendTimeSeconds.current = undefined;
+
+    resetHtml();
   }, [chatId]);
 
   useEffect(() => {
@@ -502,10 +519,9 @@ const Composer: FC<OwnProps & StateProps> = ({
   );
 
   const isNeedPremium = isContactRequirePremium && isInStoryViewer;
-  const isSendTextBlocked = isNeedPremium || !canSendPlainText;
 
   const hasWebPagePreview = !hasAttachments && canAttachEmbedLinks && !noWebPage && Boolean(webPagePreview);
-  const isComposerBlocked = isSendTextBlocked && !editingMessage;
+  const isComposerBlocked = (isNeedPremium || !canSendPlainText) && !editingMessage;
 
   useEffect(() => {
     if (!hasWebPagePreview) {
@@ -535,9 +551,7 @@ const Composer: FC<OwnProps & StateProps> = ({
     setHtml(`${getHtml()}${newHtml}`);
 
     // If selection is outside of input, set cursor at the end of input
-    requestNextMutation(() => {
-      focusEditableElement(messageInput);
-    });
+    focusEditableElement(messageInput);
   });
 
   const insertTextAndUpdateCursor = useLastCallback((
@@ -627,6 +641,14 @@ const Composer: FC<OwnProps & StateProps> = ({
       sendMessageAction({ type: 'typing' });
     }
   }, [getHtml, isEditingRef, isForCurrentMessageList, isInStoryViewer, sendMessageAction]);
+
+  // On Input Box Focus and Blur
+  useEffect(() => {
+    // Close Symbol menu if Input is focused on mobile devices
+    if (isInputHasFocus && isMobile && isSymbolMenuOpen) {
+      closeSymbolMenu();
+    }
+  }, [isInputHasFocus]);
 
   const isAdmin = chat && isChatAdmin(chat);
 
@@ -1163,10 +1185,8 @@ const Composer: FC<OwnProps & StateProps> = ({
       insertFormattedTextAndUpdateCursor(requestedDraft);
       resetOpenChatWithDraft();
 
-      requestNextMutation(() => {
-        const messageInput = document.getElementById(editableInputId)!;
-        focusEditableElement(messageInput, true);
-      });
+      const messageInput = document.getElementById(editableInputId)!;
+      focusEditableElement(messageInput, true);
     }
   }, [editableInputId, requestedDraft, resetOpenChatWithDraft, setHtml]);
 
@@ -1399,17 +1419,17 @@ const Composer: FC<OwnProps & StateProps> = ({
     return withBotMenuButton && !getHtml() && !activeVoiceRecording;
   }, [withBotMenuButton, getHtml, activeVoiceRecording]);
 
-  const [timedPlaceholderLangKey, timedPlaceholderDate] = useMemo(() => {
-    if (slowMode?.nextSendDate) {
-      return ['SlowModeWait', slowMode.nextSendDate];
-    }
-
-    if (stealthMode?.activeUntil && isInStoryViewer) {
-      return ['StealthModeActiveHint', stealthMode.activeUntil];
-    }
-
-    return [];
-  }, [isInStoryViewer, slowMode?.nextSendDate, stealthMode?.activeUntil]);
+  const inputPlaceholderTimer = slowMode?.nextSendDate
+  ? {
+    langKey: 'SlowModeWait',
+    endsAt: slowMode.nextSendDate,
+  }
+  : stealthMode?.activeUntil && isInStoryViewer
+    ? {
+      langKey: 'StealthModeActiveHint',
+      endsAt: stealthMode.activeUntil,
+    } 
+    : undefined;
 
   const isComposerHasFocus = isBotKeyboardOpen || isSymbolMenuOpen || isEmojiTooltipOpen || isSendAsMenuOpen
     || isMentionTooltipOpen || isInlineBotTooltipOpen || isBotCommandMenuOpen || isAttachMenuOpen
@@ -1758,7 +1778,7 @@ const Composer: FC<OwnProps & StateProps> = ({
             />
           </>
         )}
-        <div className={buildClassName('message-input-wrapper', getPeerColorClass(currentUser))}>
+        <div className={buildClassName(INPUT_WRAPPER_CLASS, getPeerColorClass(currentUser))}>
           {isInMessageList && (
             <>
               {withBotMenuButton && (
@@ -1826,18 +1846,18 @@ const Composer: FC<OwnProps & StateProps> = ({
               forceDarkTheme={isInStoryViewer}
             />
           )}
-          <MessageInput
-            ref={inputRef}
-            id={inputId}
-            editableInputId={editableInputId}
-            customEmojiPrefix={type}
-            isStoryInput={isInStoryViewer}
+          <MessageInputNew
+            inputRef={inputRef}
+            type={type}
             chatId={chatId}
-            canSendPlainText={!isComposerBlocked}
             threadId={threadId}
-            isReady={isReady}
-            isActive={!hasAttachments}
-            getHtml={getHtml}
+            canAutoFocus={isReady && isForCurrentMessageList && !hasAttachments && isInMessageList}
+            canSendPlainText={!isComposerBlocked}
+            editableInputId={editableInputId}
+            getHtmlInputText={getHtml}
+            hasAttachments={hasAttachments}
+            isNeedPremium={isNeedPremium}
+            // TODO: FUNCTION TO BUILD PLACEHOLDER
             placeholder={
               activeVoiceRecording && windowWidth <= SCREEN_WIDTH_TO_HIDE_PLACEHOLDER
                 ? ''
@@ -1845,19 +1865,14 @@ const Composer: FC<OwnProps & StateProps> = ({
                   ? (botKeyboardPlaceholder || inputPlaceholder || lang(placeholderForForumAsMessages || 'Message'))
                   : isInStoryViewer ? lang('StoryRepliesLocked') : lang('Chat.PlaceholderTextNotAllowed'))
             }
-            timedPlaceholderDate={timedPlaceholderDate}
-            timedPlaceholderLangKey={timedPlaceholderLangKey}
-            forcedPlaceholder={inlineBotHelp}
-            canAutoFocus={isReady && isForCurrentMessageList && !hasAttachments && isInMessageList}
-            noFocusInterception={hasAttachments}
-            shouldSuppressFocus={isMobile && isSymbolMenuOpen}
             shouldSuppressTextFormatter={isEmojiTooltipOpen || isMentionTooltipOpen || isInlineBotTooltipOpen}
-            onUpdate={setHtml}
-            onSend={onSend}
-            onSuppressedFocus={closeSymbolMenu}
-            onFocus={markInputHasFocus}
-            onBlur={unmarkInputHasFocus}
-            isNeedPremium={isNeedPremium}
+            timerPlaceholderData={inputPlaceholderTimer}
+            onMessageSend={onSend}
+            onInputHtmlChange={setHtml}
+            onInputHtmlUndo={undoHtml}
+            onInputHtmlRedo={redoHtml}
+            onInputBoxFocus={markInputHasFocus}
+            onInputBoxBlur={unmarkInputHasFocus}
           />
           {isInMessageList && (
             <>
