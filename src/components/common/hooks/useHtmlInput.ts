@@ -2,7 +2,7 @@ import { useEffect, useRef, useSignal } from "../../../lib/teact/teact";
 import { debounce } from "../../../util/schedulers";
 
 const HTML_INPUT_HISTORY_DEBOUNCE_MS = 300;
-const HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH = 4096 * 50; // ~200KB
+const HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH = 4096 * 100; // ~400KB
 
 function pruneHistory(history: string[], maxTotalLength: number): string[] {
   for (let i = 0; i < history.length - 1; i++) {
@@ -37,14 +37,7 @@ export default function useHtmlInput(initialValue: string = '') {
     ) return;
 
     inputSnapshotListRef.current.push(html);
-    for (let i = 0; i < inputSnapshotListRef.current.length - 1; i++) {
-      const totalLength = inputSnapshotListRef.current.slice(i).join('').length;
-      if (totalLength < HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH) {
-        inputSnapshotListRef.current = inputSnapshotListRef.current.slice(i);
-        break;
-      }
-    }
-    console.warn(inputSnapshotListRef.current);
+    inputSnapshotListRef.current = pruneHistory(inputSnapshotListRef.current, HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH);
     currentSnapshotIndexRef.current = inputSnapshotListRef.current.length - 1;
   }, HTML_INPUT_HISTORY_DEBOUNCE_MS, false);
 

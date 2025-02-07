@@ -16,18 +16,19 @@
 
 .MessageInput {
   .input-scroller {
-    margin-right: 0.5rem;
-    padding-right: 0.25rem;
     min-height: var(--base-height, 3.5rem);
     max-height: 26rem;
     overflow: hidden;
+    scrollbar-gutter: stable;
     
     &.overflown {
       overflow-y: auto;
       margin-top: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2);
+      margin-bottom: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2);
       & > .input-scroller-content {
         & > .form-control {
           padding-top: 0;
+          padding-bottom: 0;
         }
       }
     }
@@ -81,6 +82,7 @@
 
     .form-control {
       padding: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2) 0.875rem;
+      padding-right: 0.1rem;
       overflow: hidden;
       height: auto;
       line-height: 1.375;
@@ -245,12 +247,9 @@
 
   &.story-input-text,
   &.caption-input-text {
-    --margin-for-scrollbar: 2rem;
-
     .input-scroller {
       min-height: var(--base-height, 3.5rem);
       max-height: 10rem;
-      margin-right: calc((var(--margin-for-scrollbar) + 1rem) * -1);
 
       &.is-need-premium {
         margin-right: 0.5rem;
@@ -262,8 +261,6 @@
     }
 
     .input-scroller-content {
-      margin-right: calc(var(--margin-for-scrollbar) + 0.5rem);
-
       &.is-need-premium {
         margin-right: 0;
       }
