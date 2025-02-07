@@ -18,7 +18,6 @@ import {
   SUPPORTED_PHOTO_CONTENT_TYPES,
   SUPPORTED_VIDEO_CONTENT_TYPES,
 } from '../../../config';
-import { requestMutation } from '../../../lib/fasterdom/fasterdom';
 import { getAttachmentMediaType, isUserId } from '../../../global/helpers';
 import { selectChatFullInfo, selectIsChatWithSelf } from '../../../global/selectors';
 import { selectCurrentLimit } from '../../../global/selectors/limits';
@@ -55,12 +54,13 @@ import CustomEmojiTooltip from './CustomEmojiTooltip.async';
 import CustomSendMenu from './CustomSendMenu.async';
 import EmojiTooltip from './EmojiTooltip.async';
 import MentionTooltip from './MentionTooltip';
-import MessageInput from './MessageInput';
+import MessageInputNew from './MessageInputNew';
 import SymbolMenuButton from './SymbolMenuButton';
 
 import styles from './AttachmentModal.module.scss';
 
 export type OwnProps = {
+  inputId: string;
   chatId: string;
   threadId: ThreadId;
   attachments: ApiAttachment[];
@@ -76,7 +76,9 @@ export type OwnProps = {
   shouldForceAsFile?: boolean;
   isForCurrentMessageList?: boolean;
   forceDarkTheme?: boolean;
-  onCaptionUpdate: (html: string) => void;
+  onInputHtmlChange: (html: string) => void;
+  onInputHtmlRedo: () => boolean;
+  onInputHtmlUndo: () => boolean;
   onSend: (sendCompressed: boolean, sendGrouped: boolean, isInvertedMedia?: true) => void;
   onFileAppend: (files: File[], isSpoiler?: boolean) => void;
   onAttachmentsUpdate: (attachments: ApiAttachment[]) => void;
@@ -104,11 +106,11 @@ type StateProps = {
   attachmentSettings: GlobalState['attachmentSettings'];
 };
 
-const ATTACHMENT_MODAL_INPUT_ID = 'caption-input-text';
 const DROP_LEAVE_TIMEOUT_MS = 150;
 const MAX_LEFT_CHARS_TO_SHOW = 100;
 
 const AttachmentModal: FC<OwnProps & StateProps> = ({
+  inputId,
   chatId,
   threadId,
   attachments,
@@ -134,7 +136,9 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
   isForCurrentMessageList,
   forceDarkTheme,
   onAttachmentsUpdate,
-  onCaptionUpdate,
+  onInputHtmlChange,
+  onInputHtmlUndo,
+  onInputHtmlRedo,
   onSend,
   onFileAppend,
   onClear,
@@ -224,7 +228,7 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
   } = useEmojiTooltip(
     Boolean(isReady && (isForCurrentMessageList || !isForMessage) && renderingIsOpen),
     getHtml,
-    onCaptionUpdate,
+    onInputHtmlChange,
     EDITABLE_INPUT_MODAL_ID,
     recentEmojis,
     baseEmojiKeywords,
@@ -238,7 +242,7 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
   } = useCustomEmojiTooltip(
     Boolean(isReady && (isForCurrentMessageList || !isForMessage) && renderingIsOpen && shouldSuggestCustomEmoji),
     getHtml,
-    onCaptionUpdate,
+    onInputHtmlChange,
     getSelectionRange,
     inputRef,
     customEmojiForEmoji,
@@ -252,7 +256,7 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
   } = useMentionTooltip(
     Boolean(isReady && isForCurrentMessageList && renderingIsOpen),
     getHtml,
-    onCaptionUpdate,
+    onInputHtmlChange,
     getSelectionRange,
     inputRef,
     groupChatMembers,
@@ -415,18 +419,19 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
 
   useEffectOnce(handleResize);
 
-  useEffect(() => {
-    const mainButton = mainButtonRef.current;
-    const input = document.getElementById(ATTACHMENT_MODAL_INPUT_ID);
+  // Fix this
+  // useEffect(() => {
+  //   const mainButton = mainButtonRef.current;
+  //   const input = document.getElementById(ATTACHMENT_MODAL_INPUT_ID);
 
-    if (!mainButton || !input) return;
+  //   if (!mainButton || !input) return;
 
-    const { width } = mainButton.getBoundingClientRect();
+  //   const { width } = mainButton.getBoundingClientRect();
 
-    requestMutation(() => {
-      input.style.setProperty('--margin-for-scrollbar', `${width}px`);
-    });
-  }, [lang, isOpen]);
+  //   requestMutation(() => {
+  //     input.style.setProperty('--margin-for-scrollbar', `${width}px`);
+  //   });
+  // }, [lang, isOpen]);
 
   const MoreMenuButton: FC<{ onTrigger: () => void; isOpen?: boolean }> = useMemo(() => {
     return ({ onTrigger, isOpen: isMenuOpen }) => (
@@ -673,25 +678,27 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
               idPrefix="attachment"
               forceDarkTheme={forceDarkTheme}
             />
-            <MessageInput
-              ref={inputRef}
-              id={ATTACHMENT_MODAL_INPUT_ID}
+            <MessageInputNew
+              type={'caption'}
+              id={inputId}
+              inputRef={inputRef}
               chatId={chatId}
               threadId={threadId}
-              isAttachmentModalInput
-              customEmojiPrefix="attachment"
+              // customEmojiPrefix="attachment"
               isReady={isReady}
-              isActive={isOpen}
-              getHtml={getHtml}
+              hasAttachments={isOpen}
+              getHtmlInputText={getHtml}
               editableInputId={EDITABLE_INPUT_MODAL_ID}
               placeholder={lang('AddCaption')}
-              onUpdate={onCaptionUpdate}
-              onSend={handleSendClick}
-              onScroll={handleCaptionScroll}
-              canAutoFocus={Boolean(isReady && isForCurrentMessageList && attachments.length)}
+              onMessageSend={handleSendClick}
+              onInputHtmlChange={onInputHtmlChange}
+              // onScroll={handleCaptionScroll}
+              canAutoFocus={Boolean(isReady && isForCurrentMessageList && isOpen)}
               captionLimit={leftChars}
-              shouldSuppressFocus={isMobile && isSymbolMenuOpen}
-              onSuppressedFocus={closeSymbolMenu}
+              onInputHtmlRedo={onInputHtmlRedo}
+              onInputHtmlUndo={onInputHtmlUndo}
+              // shouldSuppressFocus={isMobile && isSymbolMenuOpen}
+              // onSuppressedFocus={closeSymbolMenu}
             />
             <div className={styles.sendWrapper}>
               <Button

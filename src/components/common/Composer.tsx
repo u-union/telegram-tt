@@ -195,6 +195,8 @@ export const getEditableInputID = (type: ComposerType) => {
   }
 };
 
+export const getInputId = (type: ComposerType) => `${type}-input-text`;
+
 type OwnProps = {
   type: ComposerType;
   chatId: string;
@@ -586,12 +588,10 @@ const Composer: FC<OwnProps & StateProps> = ({
     shouldForceAsFile,
     handleAppendFiles,
     handleFileSelect,
-    onCaptionUpdate,
     handleClearAttachments,
     handleSetAttachments,
   } = useAttachmentModal({
     attachments,
-    setHtml,
     setAttachments,
     fileSizeLimit,
     chatId,
@@ -1657,6 +1657,7 @@ const Composer: FC<OwnProps & StateProps> = ({
         />
       )}
       <AttachmentModal
+        inputId={getInputId('caption')}
         chatId={chatId}
         threadId={threadId}
         canShowCustomSendMenu={canShowCustomSendMenu}
@@ -1670,7 +1671,9 @@ const Composer: FC<OwnProps & StateProps> = ({
         isForMessage={isInMessageList}
         shouldSchedule={isInScheduledList}
         forceDarkTheme={isInStoryViewer}
-        onCaptionUpdate={onCaptionUpdate}
+        onInputHtmlChange={setHtml}
+        onInputHtmlUndo={undoHtml}
+        onInputHtmlRedo={redoHtml}
         onSendSilent={handleSendSilentAttachments}
         onSend={handleSendAttachmentsFromModal}
         onSendScheduled={handleSendScheduledAttachments}
@@ -1848,6 +1851,7 @@ const Composer: FC<OwnProps & StateProps> = ({
           )}
           <MessageInputNew
             inputRef={inputRef}
+            id={getInputId(type)}
             type={type}
             chatId={chatId}
             threadId={threadId}
@@ -1857,6 +1861,7 @@ const Composer: FC<OwnProps & StateProps> = ({
             getHtmlInputText={getHtml}
             hasAttachments={hasAttachments}
             isNeedPremium={isNeedPremium}
+            isReady={isReady}
             // TODO: FUNCTION TO BUILD PLACEHOLDER
             placeholder={
               activeVoiceRecording && windowWidth <= SCREEN_WIDTH_TO_HIDE_PLACEHOLDER

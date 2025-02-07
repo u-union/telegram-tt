@@ -77,7 +77,6 @@ export function setCaretPosition(element: Node, position: number) {
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
-
         return -1;
       } else {
         position -= 'length' in node ? node.length as number : 0;
@@ -93,7 +92,17 @@ export function setCaretPosition(element: Node, position: number) {
   return position;
 }
 
+export function setCaretPositionToLast(element: HTMLElement) {
+  const range = document.createRange();
+  const selection = window.getSelection();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  removeAllSelections();
+  selection?.addRange(range);
+}
+
 export function removeAllSelections() {
   const selection = window.getSelection();
   selection?.removeAllRanges();
+  selection?.empty(); // Old browsers support
 }

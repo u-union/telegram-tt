@@ -20,7 +20,7 @@ import { ComposerType } from "../../common/Composer";
 
 import buildClassName from '../../../util/buildClassName';
 import focusEditableElement from "../../../util/focusEditableElement";
-import { setCaretPosition } from "../../../util/selection";
+import { removeAllSelections, setCaretPositionToLast } from "../../../util/selection";
 import { Signal } from "../../../util/signals";
 import parseEmojiOnlyString from '../../../util/emoji/parseEmojiOnlyString';
 import { IS_ANDROID, IS_EMOJI_SUPPORTED, IS_IOS, IS_TOUCH_ENV } from '../../../util/windowEnvironment';
@@ -45,30 +45,26 @@ const MAX_ATTACHMENT_MODAL_INPUT_HEIGHT = 160;
 const MAX_STORY_MODAL_INPUT_HEIGHT = 128;
 const TRANSITION_DURATION_FACTOR = 50;
 
-const clearSelection = () => {
-  const selection = window.getSelection();
-  selection?.removeAllRanges?.();
-  selection?.empty?.(); // Old IE and Safari support
-}
-
 type OwnProps = {
   inputRef: RefObject<HTMLDivElement | null>;
   type: ComposerType;
+  id: string;
   chatId: string;
   threadId: ThreadId;
   canAutoFocus?: boolean;
-  canSendPlainText: boolean;
+  canSendPlainText?: boolean;
   captionLimit?: number;
   editableInputId: string;
   getHtmlInputText: Signal<string>;
   hasAttachments: boolean;
   isNeedPremium?: boolean;
+  isReady: boolean;
   placeholder: string;
   shouldSuppressTextFormatter?: boolean;
   timerPlaceholderData?: TextTimerDetails;
   onInputHtmlChange: (html: string) => void;
-  onInputHtmlUndo: () => boolean;
-  onInputHtmlRedo: () => boolean;
+  onInputHtmlUndo?: () => boolean;
+  onInputHtmlRedo?: () => boolean;
   onMessageSend: NoneToVoidFunction;
   // onScroll?: (event: React.UIEvent<HTMLElement>) => void;
   onInputBoxFocus?: NoneToVoidFunction;
@@ -82,10 +78,10 @@ type StateProps = {
   canPlayAnimatedEmojis: boolean;
 };
 
-
 const MessageInputNew: FC<OwnProps & StateProps> = ({
   inputRef,
   type,
+  id,
   chatId,
   threadId,
   canAutoFocus,
@@ -95,6 +91,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   hasAttachments,
   getHtmlInputText,
   isNeedPremium, // in Composer.tsx - isNeedPremium = isContactRequirePremium && isInStoryViewer
+  isReady,
   placeholder,
   replyInfo,
   isSelectModeActive,
@@ -119,6 +116,8 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   // Is Story Input or Attachment Modal Input or neither
   const isStoryInput = type === 'story';
   const isAttachmentModalInput = type === 'caption';
+  const isActive = isAttachmentModalInput === hasAttachments;
+  
   const { isMobile } = useAppLayout();
   const isMobileDevice = !!isMobile && (IS_IOS || IS_ANDROID);
   const maxInputHeight = isAttachmentModalInput
@@ -161,12 +160,12 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   );
 
   const inputBoxClass = useDerivedState(() => {
-    const isTouched = Boolean(getHtmlInputText());
+    const isTouched = Boolean(isActive && getHtmlInputText());
     return buildClassName(
       'form-control allow-selection',
       isTouched && 'touched',
     );
-  }, [getHtmlInputText]);
+  }, [getHtmlInputText, hasAttachments]);
   
   const inputPlaceholderClass = buildClassName(
     'placeholder-text',
@@ -224,12 +223,14 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    * Initialize the input box with current HTML signal value
    */
   useLayoutEffect(() => {
-    const html = !hasAttachments ? getHtmlInputText() : '';
+    console.warn('use layout effect', id, isActive);
+    const html = isActive ? getHtmlInputText() : '';
 
+    console.warn(`html: ${html}, inputRef.current!.innerHTML: ${inputRef.current!.innerHTML}`);
     if (html !== inputRef.current!.innerHTML) {
       requestMutation(() => {
         inputRef.current!.innerHTML = html;
-        setCaretPosition(inputRef.current!, html.length);
+        setCaretPositionToLast(inputRef.current!);
       });
     }
 
@@ -243,7 +244,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       updateMessageInputHeight();
     }
 
-  }, [getHtmlInputText]);
+  }, [getHtmlInputText, hasAttachments]);
 
   /**
    * Manually focus on the input box
@@ -287,7 +288,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   const handleMessageInputClick = useLastCallback(() => {
     // If Input is forbidden, show notification
-    if (!canSendPlainText || isNeedPremium) {
+    if (!isAttachmentModalInput && !canSendPlainText && isNeedPremium) {
       showAllowedMessageTypesNotification({ chatId });
     }
   });
@@ -308,7 +309,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       // Remove any active styling when input is cleared
       if (window.getSelection()) {
         inputRef.current!.blur();
-        clearSelection();
+        removeAllSelections();
         focusOnInputBox();
       }
     } else {
@@ -316,12 +317,17 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     }
   });
 
-  const vibrate = (element: HTMLElement | null) => {
-    if (!element || !element.classList || element.classList.contains('vibrate-effect')) return;
+  /**
+   * Shake an element with a shake-effect class
+   * @param element - HTMLElement to vibrate
+   * @returns 
+   */
+  const shakeElement = (element: HTMLElement | null) => {
+    if (!element || !element.classList || element.classList.contains('shake-effect')) return;
 
-    requestMutation(() => element.classList.add('vibrate-effect'));
+    requestMutation(() => element.classList.add('shake-effect'));
     setTimeout(() => {
-      requestMutation(() => element.classList.remove('vibrate-effect'));
+      requestMutation(() => element.classList.remove('shake-effect'));
     }, 300); // same as animation (no sense to change)
   }
 
@@ -338,14 +344,14 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         e.preventDefault();
         // Redo (Ctrl/Cmd+Y) or (Ctrl/Cmd+Shift+Z)
         if (key.toLowerCase() === 'y' || (shiftKey && key.toLowerCase() === 'z')) {
-          if (onInputHtmlRedo()) {
-            vibrate(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);
+          if (onInputHtmlRedo?.()) {
+            shakeElement(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);
           }
         }
         // Undo (Ctrl/Cmd+Z)
         else if (key.toLowerCase() === 'z') {
-          if (onInputHtmlUndo()) {
-            vibrate(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);
+          if (onInputHtmlUndo?.()) {
+            shakeElement(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);id
           }
         }
         return;
@@ -443,7 +449,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
 
 
   return (
-    <div className={messageInputClass} onClick={handleMessageInputClick}>
+    <div id={id} className={messageInputClass} onClick={handleMessageInputClick}>
       <div
         className={inputScrollerClass}
         // onScroll={onScroll} // Only used by attachments modal (check how to handle this)
@@ -456,7 +462,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
           ref={inputRef}
           role="textbox"
           dir='auto'
-          contentEditable={canSendPlainText}
+          contentEditable={isAttachmentModalInput || canSendPlainText}
           onChange={handleInputBoxChange}
           onKeyDown={handleInputBoxKeyDown}
           onMouseDown={handleInputBoxMouseDown}
@@ -502,7 +508,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         anchorPosition={textFormatterAnchorPosition}
         selectedRange={selectedRange}
         setSelectedRange={setSelectedRange}
-        onClose={() => {hideTextFormatter(); clearSelection();}}
+        onClose={() => {hideTextFormatter(); removeAllSelections();}}
       />
       {/* {forcedPlaceholder && <span className="forced-placeholder">{renderText(forcedPlaceholder!)}</span>} */}
     </div>

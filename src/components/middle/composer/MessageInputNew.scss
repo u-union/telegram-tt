@@ -1,6 +1,6 @@
 @use '../../../styles/mixins';
 
-@keyframes vibrate {
+@keyframes shake {
   0% { transform: translateX(0); }
   10% { transform: translateX(-1px); }
   20% { transform: translateX(1px); }
@@ -102,8 +102,8 @@
         }
       }
 
-      &.vibrate-effect {
-        animation: vibrate 0.3s ease-out;
+      &.shake-effect {
+        animation: shake 0.3s ease-out;
       }
     }
 
@@ -124,8 +124,8 @@
       max-width: 100%;
       transition: opacity 200ms ease-out, transform 200ms ease-out;
 
-      &.vibrate-effect {
-        animation: vibrate 0.3s ease-out;
+      &.shake-effect {
+        animation: shake 0.3s ease-out;
       }
       
       &.with-icon {
