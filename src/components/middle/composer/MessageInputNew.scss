@@ -90,6 +90,7 @@
       unicode-bidi: plaintext;
       text-align: initial;
       font-size: var(--composer-text-size, 1rem);
+      white-space: pre-wrap;
 
       background: transparent !important;
       border: none !important;
@@ -202,6 +203,12 @@
       unicode-bidi: plaintext;
       text-align: initial;
     }
+
+    .max-length-indicator {
+      bottom: -1rem;
+      right: -0.5rem;
+      font-size: 0.9rem;
+    }
   }
 
   &.message-input-text {
@@ -209,7 +216,6 @@
       margin-bottom: 0;
       line-height: 1.3125;
       padding: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.3125) / 2) 0;
-      white-space: pre-wrap;
       height: auto;
 
       @media (max-width: 600px) {
@@ -260,13 +266,6 @@
       }
     }
 
-    .max-length-indicator {
-      position: fixed;
-      bottom: -1rem;
-      right: 6.5rem;
-      font-size: 0.85rem;
-    }
-
     .input-scroller-content {
       &.is-need-premium {
         margin-right: 0;
@@ -300,8 +299,17 @@
     }
   }
 
-  &.caption-input-text .placeholder-text {
-    bottom: 1.0625rem;
+  &.caption-input-text {
+    .placeholder-text {
+      bottom: 1.0625rem;
+    }
+
+    .max-length-indicator {
+      position: fixed;
+      bottom: -1rem;
+      right: 6.5rem;
+      font-size: 0.85rem;
+    }
   }
 
   &.story-input-text .placeholder-text {

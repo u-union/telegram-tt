@@ -121,6 +121,7 @@ import { isSelectionInsideInput } from '../middle/composer/helpers/selection';
 import { getPeerColorClass } from './helpers/peerColor';
 import renderText from './helpers/renderText';
 import { getTextWithEntitiesAsHtml } from './helpers/renderTextWithEntities';
+import { getHtmlTextLength } from '../middle/composer/helpers/getHtmlTextLength';
 
 import useInterval from '../../hooks/schedulers/useInterval';
 import useTimeout from '../../hooks/schedulers/useTimeout';
@@ -194,6 +195,8 @@ export const getEditableInputID = (type: ComposerType) => {
       return EDITABLE_INPUT_MODAL_ID;
   }
 };
+
+const MAX_LEFT_CHARS_TO_SHOW = 500;
 
 export const getInputId = (type: ComposerType) => `${type}-input-text`;
 
@@ -893,6 +896,11 @@ const Composer: FC<OwnProps & StateProps> = ({
       handleEditCancel();
     }
   });
+
+  const leftChars = useDerivedState(() => {
+    const leftCharsBeforeLimit = maxMessageLength - getHtmlTextLength(getHtml());
+    return leftCharsBeforeLimit <= MAX_LEFT_CHARS_TO_SHOW ? leftCharsBeforeLimit : undefined;
+  }, [maxMessageLength, getHtml]);
 
   const validateTextLength = useLastCallback((text: string, isAttachmentModal?: boolean) => {
     const maxLength = isAttachmentModal ? captionLimit : maxMessageLength;
@@ -1857,6 +1865,7 @@ const Composer: FC<OwnProps & StateProps> = ({
             threadId={threadId}
             canAutoFocus={isReady && isForCurrentMessageList && !hasAttachments && isInMessageList}
             canSendPlainText={!isComposerBlocked}
+            captionLimit={leftChars}
             editableInputId={editableInputId}
             getHtmlInputText={getHtml}
             hasAttachments={hasAttachments}
