@@ -23,14 +23,14 @@
     
     &.overflown {
       overflow-y: auto;
-      margin-top: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2);
-      margin-bottom: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2);
-      & > .input-scroller-content {
-        & > .form-control {
-          padding-top: 0;
-          padding-bottom: 0;
-        }
-      }
+      // margin-top: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2);
+      // margin-bottom: calc((var(--base-height, 3.5rem) - var(--composer-text-size, 1rem) * 1.375) / 2);
+      // & > .input-scroller-content {
+      //   & > .form-control {
+      //     padding-top: 0;
+      //     padding-bottom: 0;
+      //   }
+      // }
     }
   
     @media (max-width: 600px) {
@@ -258,6 +258,13 @@
       &:has(.form-control:focus) {
         border-color: var(--color-primary);
       }
+    }
+
+    .max-length-indicator {
+      position: fixed;
+      bottom: -1rem;
+      right: 6.5rem;
+      font-size: 0.85rem;
     }
 
     .input-scroller-content {
