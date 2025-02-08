@@ -107,7 +107,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   onInputBoxBlur,
   // onScroll,
 }) => {
-  const htmlRef = useRef(getHtmlInputText());
+  const htmlRef = useRef<string>('');
   const inputBoxCloneRef = useRef<HTMLDivElement>(null);
   const inputScrollerCloneRef = useRef<HTMLDivElement>(null);
   const inputBoxPlaceholderRef = useRef<HTMLDivElement>(null);
@@ -165,7 +165,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       'form-control allow-selection',
       isTouched && 'touched',
     );
-  }, [getHtmlInputText, hasAttachments]);
+  }, [getHtmlInputText, hasAttachments, isActive]);
   
   const inputPlaceholderClass = buildClassName(
     'placeholder-text',
@@ -223,10 +223,8 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    * Initialize the input box with current HTML signal value
    */
   useLayoutEffect(() => {
-    console.warn('use layout effect', id, isActive);
     const html = isActive ? getHtmlInputText() : '';
 
-    console.warn(`html: ${html}, inputRef.current!.innerHTML: ${inputRef.current!.innerHTML}`);
     if (html !== inputRef.current!.innerHTML) {
       requestMutation(() => {
         inputRef.current!.innerHTML = html;
@@ -498,7 +496,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
           <div ref={inputBoxCloneRef} className={buildClassName(inputBoxClass, 'clone')} dir="auto" />
         </div>
       </div>
-      {captionLimit !== undefined && (
+      {captionLimit !== undefined && isActive && (
         <div className="max-length-indicator" dir="auto">
           {captionLimit}
         </div>

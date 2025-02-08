@@ -110,6 +110,7 @@ import { processMessageInputForCustomEmoji } from '../../util/emoji/customEmojiM
 import focusEditableElement from '../../util/focusEditableElement';
 import { MEMO_EMPTY_ARRAY } from '../../util/memo';
 import parseHtmlAsFormattedText from '../../util/parseHtmlAsFormattedText';
+import parseHtmlAsFormattedTextNew from '../../util/parseHtmlAsFormattedTextNew';
 import { insertHtmlInSelection } from '../../util/selection';
 import { getServerTime } from '../../util/serverTime';
 import { IS_IOS, IS_VOICE_RECORDING_SUPPORTED } from '../../util/windowEnvironment';
@@ -1063,7 +1064,18 @@ const Composer: FC<OwnProps & StateProps> = ({
       }
     }
 
-    const { text, entities } = parseHtmlAsFormattedText(getHtml());
+    let { text: oldText, entities: oldEntities } = parseHtmlAsFormattedText(getHtml());
+
+    let { text: newText, entities: newEntities } = parseHtmlAsFormattedTextNew(getHtml());
+    console.warn(`oldText:\n${oldText}\nnewText:\n${newText}\nisSame: ${oldText === newText}`);
+    console.warn('oldEntities: ', oldEntities);
+    console.warn('newEntities: ', newEntities);
+    
+    const text = newText;
+    const entities = newEntities;
+
+    // const text = oldText;
+    // const entities = oldEntities;
 
     if (currentAttachments.length) {
       sendAttachments({
@@ -1857,6 +1869,39 @@ const Composer: FC<OwnProps & StateProps> = ({
               forceDarkTheme={isInStoryViewer}
             />
           )}
+          {/* <MessageInput
+            // ref={inputRef}
+            // id={inputId}
+            // editableInputId={editableInputId}
+            customEmojiPrefix={type}
+            // isStoryInput={isInStoryViewer}
+            // chatId={chatId}
+            // canSendPlainText={!isComposerBlocked}
+            // threadId={threadId}
+            isReady={isReady}
+            // isActive={!hasAttachments}
+            // getHtml={getHtml}
+            // placeholder={
+              activeVoiceRecording && windowWidth <= SCREEN_WIDTH_TO_HIDE_PLACEHOLDER
+                ? ''
+                : (!isComposerBlocked
+                  ? (botKeyboardPlaceholder || inputPlaceholder || lang(placeholderForForumAsMessages || 'Message'))
+                  : isInStoryViewer ? lang('StoryRepliesLocked') : lang('Chat.PlaceholderTextNotAllowed'))
+            }
+            // timedPlaceholderDate={timedPlaceholderDate}
+            // timedPlaceholderLangKey={timedPlaceholderLangKey}
+            forcedPlaceholder={inlineBotHelp}
+            // canAutoFocus={isReady && isForCurrentMessageList && !hasAttachments && isInMessageList}
+            noFocusInterception={hasAttachments}
+            // shouldSuppressFocus={isMobile && isSymbolMenuOpen}
+            // shouldSuppressTextFormatter={isEmojiTooltipOpen || isMentionTooltipOpen || isInlineBotTooltipOpen}
+            // onUpdate={setHtml}
+            // onSend={onSend}
+            // onSuppressedFocus={closeSymbolMenu}
+            // onFocus={markInputHasFocus}
+            // onBlur={unmarkInputHasFocus}
+            // isNeedPremium={isNeedPremium}
+          /> */}
           <MessageInputNew
             inputRef={inputRef}
             id={getInputId(type)}
