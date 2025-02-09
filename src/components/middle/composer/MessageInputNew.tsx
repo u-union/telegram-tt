@@ -6,6 +6,7 @@ import useFlag from "../../../hooks/useFlag";
 import useAppLayout from '../../../hooks/useAppLayout';
 import useLastCallback from "../../../hooks/useLastCallback";
 import useDerivedState from "../../../hooks/useDerivedState";
+import useInputCustomEmojis from "./hooks/useInputCustomEmojis";
 import { requestMeasure, requestMutation } from "../../../lib/fasterdom/fasterdom";
 
 import { isSelectionInsideInput } from './helpers/selection';
@@ -112,6 +113,10 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const inputScrollerCloneRef = useRef<HTMLDivElement>(null);
   const inputBoxPlaceholderRef = useRef<HTMLDivElement>(null);
 
+  const sharedCanvasRef = useRef<HTMLCanvasElement>(null);
+  const sharedCanvasHqRef = useRef<HTMLCanvasElement>(null);
+  const absoluteContainerRef = useRef<HTMLDivElement>(null);
+
   const lang = useLang();
   // Is Story Input or Attachment Modal Input or neither
   const isStoryInput = type === 'story';
@@ -143,6 +148,18 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     showAllowedMessageTypesNotification,
     openPremiumModal,
   } = getActions();
+
+  useInputCustomEmojis(
+    getHtmlInputText,
+    inputRef,
+    sharedCanvasRef,
+    sharedCanvasHqRef,
+    absoluteContainerRef,
+    isAttachmentModalInput ? 'attachment' : type,
+    canPlayAnimatedEmojis,
+    isReady,
+    isActive,
+  );
 
   // MessageInput Component Class
   const messageInputClass = buildClassName(
@@ -486,9 +503,9 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
               </Button>
             )}
           </span>
-          {/* <canvas ref={sharedCanvasRef} className="shared-canvas" />
-          <canvas ref={sharedCanvasHqRef} className="shared-canvas" />
-          <div ref={absoluteContainerRef} className="absolute-video-container" /> */}
+          <canvas ref={sharedCanvasRef} className="shared-canvas"/>
+          <canvas ref={sharedCanvasHqRef} className="shared-canvas"/>
+          <div ref={absoluteContainerRef} className="absolute-video-container"/>
         </div>
       </div>
       <div ref={inputScrollerCloneRef} className={buildClassName(inputScrollerClass, 'clone')}>

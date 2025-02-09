@@ -4,25 +4,36 @@ import {
   ApiMessageEntityTypes,
 } from "../api/types";
 
-type MarkdownTree = {
-  text: string;
-  children?: MarkdownTreeNode[];
+type MarkupToken = {
+  type: ApiMessageEntityTypes | 'text';
+  isCloseTag?: boolean;
+  text: string
 }
 
-type MarkdownTreeNode = {
-  type: ApiMessageEntityTypes;
-  start: number;
-  end: number;
-  children?: MarkdownTreeNode[];
-  // language?: string; // For code blocks
-}
-
-type MarkdownTag = {
+type MarkupTag = {
+  regex: RegExp;
   type: ApiMessageEntityTypes;
   isMarkdown: boolean;
+  isCloseTag?: boolean;
+}
+
+type MarkupTree = {
+  text: string;
+  children?: MarkupTreeNode[];
+}
+
+type MarkupTreeNode = {
+  type: ApiMessageEntityTypes;
   start: number;
   end: number;
+  children?: MarkupTreeNode[];
+  url?: string;
+  language?: string;
+  documentId?: string;
+  canCollapse?: string;
 }
+
+const MAX_REGRESSION_DEPTH = 20;
 
 const HTML_TAG_TO_ENTITY: Record<string, ApiMessageEntityTypes> = {
   'b': ApiMessageEntityTypes.Bold,
@@ -47,7 +58,7 @@ const MARKDOWN_TAG_TO_ENTITY: Record<string, ApiMessageEntityTypes> = {
   '__': ApiMessageEntityTypes.Italic,
   '~~': ApiMessageEntityTypes.Strike,
   '||': ApiMessageEntityTypes.Spoiler,
-  '```': ApiMessageEntityTypes.Pre,
+  // '```': ApiMessageEntityTypes.Pre, // Processed before, convert to HTML
   '`': ApiMessageEntityTypes.Code,
 };
 
@@ -66,16 +77,33 @@ export default function parseHtmlAsFormattedTextNew(
   html = preprocessText(html, withMarkdownLinks);
   console.warn('html:', html);
 
-  // AST Parser
+  // HTML -> Tokenize -> Tree
   const tree = parseHtmlToTree(html, skipMarkdown);
-  
+  console.warn('tree:', tree);
   // Process the tree to create the formatted text for API
-
-  return { text: '', entities: [] };
+  const formattedText = convertTreeToFormattedText(tree);
+  console.warn('formattedText:', formattedText);
+  return formattedText;
 }
 
 function preprocessText(html: string, withMarkdownLinks: boolean): string {
+  // Clean up the HTML from non-breaking spaces and zero-width spaces
   let processedText = html.replace(/&nbsp;/g, ' ').trim().replace(/\u200b+/g, '');
+
+  // Replace <br> tags with newlines (hanle <br*> and Safari <div><br></div>)
+  const newlineRegex = new RegExp('<br[^>\\n]*>|<div><br></div>', 'g');
+  processedText = processedText.replace(newlineRegex, '\n');
+
+  // Are emojii supported / custom emojii - regex
+
+  // Replace '```' with '<pre>'
+  const preRegex = new RegExp('```(.*?)(?:\\n)([\\s\\S]*?)(?:\\n)```', 'gms');
+  processedText = processedText.replace(preRegex, '<pre data-language="$1">$2</pre>');
+
+  // Replace '\n *spacing allowed* > *everything* \n' with '<blockquote>'
+  const blockquoteRegex = new RegExp('(?:^|\\n)(?:\\s*)&gt;([\\s\\S]*?)(?=\\n|$)', 'g');
+  processedText = processedText.replace(blockquoteRegex, '\n<blockquote data-can-collapse="false">$1</blockquote>\n');
+
   if (withMarkdownLinks) {
     // Handle markdown links
     processedText = processedText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
@@ -83,259 +111,234 @@ function preprocessText(html: string, withMarkdownLinks: boolean): string {
   return processedText;
 }
 
-function parseHtmlToTree(html: string, skipMarkdown?: boolean): MarkdownTree | void {
-  const parsedTree: MarkdownTree = { text: '' };
+function parseHtmlToTree(html: string, skipMarkdown?: boolean): MarkupTree {
+  // Tokenize the text (create an array of markup tokens)
+  const markupTokens: MarkupToken[] = tokenizeMarkdown(html, skipMarkdown);
 
-  function walk(text: string, tree: MarkdownTreeNode | MarkdownTree) {
-    console.warn(`Starting walk with text: ${text}`);
-    let currentIndex = 0;
-    for(let i = 0; i < text.length; i++) {
-      const slice = text.slice(currentIndex, i + 1);
+  console.warn('markupTokens:', markupTokens);
 
-      console.warn(`i: ${i}, currentIndex: ${currentIndex}, slice: ${slice}`);
-      // Check if the slice is a markdown token
-      const tag = findMarkdownTag(slice, currentIndex, skipMarkdown);
-      if (tag) {
-        console.warn('Tag found:', tag);
+  function walk(tokens: MarkupToken[], regression_depth = 0): MarkupTreeNode[] {
+    const nodes: MarkupTreeNode[] = [];
 
-        // Handle text before the tag: add it to text and update currentIndex
-        const textBefore = text.slice(currentIndex, tag.start);
-        parsedTree.text += textBefore;
-        console.warn(`Adding text before tag: ${textBefore}`);
-        
-        // Look for the closing tag in the remaining text
-        const _slice = text.slice(tag.end);
-        
-        console.warn(`new slice: ${_slice}`);
-
-        // If found tag, find the closing tag
-        const closingTag = findMarkdownTag(_slice, tag.end, skipMarkdown, { isMarkdown: !!tag.isMarkdown, type: tag.type });
-
-        if (closingTag) {
-          // Handle text between the tags
-          const textBetween = text.slice(tag.end, closingTag.start);
-          
-          console.warn('closingTag:', closingTag);
-          console.warn('textBetween:', textBetween);
-
-          // Create a new node
-          const node: MarkdownTreeNode = {
-            type: tag.type,
-            start: parsedTree.text.length,
-            end: parsedTree.text.length + textBetween.length,
-          };
-          console.warn('created node:', node);
-          // Recursively walk the text between the tags
-          walk(textBetween, node);
-
-          // Add the node to the tree
-          tree.children = [...(tree.children || []), node];
-
-          // Update currentIndex and i
-          currentIndex = closingTag.end;
-          i = currentIndex - 1;
-        } else {
-          console.warn('No closing tag found');
-          // If no closing tag found, add tag as text
-          parsedTree.text += text.slice(tag.start, tag.end);
-          currentIndex = tag.end;
-        }
-      } else {
-        // If last slice, add it to text
-        if (i === text.length - 1) {
-          parsedTree.text += slice;
-        }
-      }
+    // Prevent infinite recursion
+    if (regression_depth > MAX_REGRESSION_DEPTH) {
+      console.warn('Max regression depth reached');
+      parsedTree.text += tokens.map(token => token.text).join('');
+      return nodes;
     }
-    console.warn('parsedTree:', parsedTree.text);
+
+    console.warn(`Reg_depth: ${regression_depth}. Starting walk with text: `, tokens);
+
+    for(let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      // Save the start index of the tag in the text
+      const tagStartIndex = parsedTree.text.length;
+      console.warn(`Processing token: `, token);
+
+      // If it's a text token, add it to the text
+      // Also, if it's a close tag (before the open tag), add it to the text
+      if (token.type === 'text' || token.isCloseTag) {
+        parsedTree.text += token.text;
+        continue;
+      } else if (token.type === ApiMessageEntityTypes.CustomEmoji) {
+        // Handle custom emoji
+        const imgElement = parseHtmlToDom(token.text) as HTMLImageElement;
+        parsedTree.text += imgElement.alt || '';
+        const attributes = getElementAttributes(imgElement, token.type);
+        if (attributes.documentId) {
+          nodes.push({
+            type: token.type,
+            start: tagStartIndex,
+            end: parsedTree.text.length,
+            documentId: attributes.documentId,
+          });
+        }
+        continue;
+      }
+
+      // Find the corresponding close tag
+      const closeTagIndex = tokens
+        .findIndex((t, index) => {
+          return t.type === token.type
+            && t.isCloseTag === (token.isCloseTag === undefined ? undefined : true)
+            && index > i;
+        });
+
+      if (closeTagIndex === -1) {
+        console.warn('Close tag not found');
+        parsedTree.text += token.text;
+        continue;
+      }
+      const closeTag = tokens[closeTagIndex];
+      console.warn('Close tag found:', closeTag);
+
+      // Get attributes if needed
+      const attributes: Record<string, string> = {};
+      if (token.type === ApiMessageEntityTypes.Pre) {
+        // Get language for pre tag
+        const preElement = parseHtmlToDom(token.text) as HTMLElement;
+        Object.assign(attributes, getElementAttributes(preElement, token.type));
+      } else if (token.type === ApiMessageEntityTypes.TextUrl) {
+        // Get URL for a tag
+        const aElement = parseHtmlToDom(token.text) as HTMLAnchorElement;
+        Object.assign(attributes, getElementAttributes(aElement, token.type));
+      }  else if (token.type === ApiMessageEntityTypes.Blockquote) {
+        // Get canCollapse for blockquote tag
+        const blockquoteElement = parseHtmlToDom(token.text) as HTMLElement;
+        Object.assign(attributes, getElementAttributes(blockquoteElement, token.type));
+      } else if (token.type === ApiMessageEntityTypes.MentionName) {
+        // Get userId for span tag
+        const spanElement = parseHtmlToDom(token.text) as HTMLElement;
+        Object.assign(attributes, getElementAttributes(spanElement, token.type));
+      }
+
+      // Go through the tokens between the open and close tag
+      const childrenTokens = tokens.slice(i + 1, closeTagIndex);
+      const children = walk(childrenTokens, regression_depth + 1);
+
+      // Add the node to the nodes array
+      nodes.push({
+        type: token.type,
+        start: tagStartIndex,
+        end: parsedTree.text.length,
+        children: children.length ? children : undefined,
+        ...attributes
+      });
+
+      // Move the index to the close tag
+      i = closeTagIndex;
+    }
+
+    return nodes;
   }
 
-  walk(html, parsedTree);
-  console.warn('parsedTree:', parsedTree);
+  const parsedTree: MarkupTree = { text: '' };
+  parsedTree.children = walk(markupTokens);
+
   return parsedTree;
 }
 
-function findMarkdownTag(text: string, offset: number, skipMarkdown?: boolean, closeTag?: { isMarkdown: boolean, type: ApiMessageEntityTypes}): MarkdownTag | void {
-  let tags = Object.entries(HTML_TAG_TO_ENTITY).map(arr => { return {tag: arr[0], type: arr[1], isMarkdown: false }});
-  if (!skipMarkdown) {
-    tags.push(...Object.entries(MARKDOWN_TAG_TO_ENTITY).map(arr => { return {tag: arr[0], type: arr[1], isMarkdown: true }}));
+function convertTreeToFormattedText(tree: MarkupTree): ApiFormattedText {
+  function walk(node: MarkupTreeNode): ApiMessageEntity[] {
+    const entities: ApiMessageEntity[] = [];
+    // Create the entity for the current node
+    const entity: ApiMessageEntity = {
+      type: node.type,
+      offset: node.start,
+      length: node.end - node.start,
+      language: node.language || undefined,
+      documentId: node.documentId || undefined,
+      url: node.url || undefined,
+      canCollapse: node.canCollapse ? node.canCollapse === 'true' : undefined,
+    };
+    entities.push(entity);
+
+    // Uncomment and adjust if processing children is needed
+    if (node.children) {
+      const childrenEntities = node.children.map(walk);
+      entities.push(...childrenEntities.flat());
+    }
+
+    return entities;
   }
 
-  for (const item of tags) {
-    const { tag, type, isMarkdown } = item;
-    if (closeTag && type !== closeTag.type && isMarkdown !== closeTag.isMarkdown) continue;
+  // Process all top-level nodes in the tree if any
+  const res = tree.children ? tree.children.map(walk).flat() : undefined;
+  return { text: tree.text, entities: res || [] };
+}
 
-    const regex = !isMarkdown ? new RegExp(!closeTag ? `<${tag}(?:\\s+[^>]*)?>` : `</${tag}>`, 'g') : new RegExp(escapeRegExp(tag), 'g');
+function tokenizeMarkdown(html: string, skipMarkdown?: boolean): MarkupToken[] {
+  // Tokenize the text
+  const markupTokens: MarkupToken[] = [];
+
+  let currentSliceStartIndex = 0;
+  for (let i = 0; i < html.length; i++) {
+    const slice = html.slice(currentSliceStartIndex, i + 1);
+    console.warn(`i: ${i}, currentSliceStartIndex: ${currentSliceStartIndex}, slice: ${slice}`);
+
+    // Check if the slice is a markdown token
+    const tag = findMarkdownTag(slice, skipMarkdown);
+    if (tag) {
+      console.warn('Tag found:', tag);
+      const tagStartIndex = slice.length - tag.text.length;
+      // Text before the tag - add as text token
+      const textBefore = html.slice(currentSliceStartIndex, currentSliceStartIndex + tagStartIndex);
+      if (textBefore) {
+        markupTokens.push({ type: 'text', text: textBefore });
+        console.warn(`Adding text before tag: ${textBefore}`);
+      }
+
+      // Add the tag token to the array
+      markupTokens.push({ type: tag.type, text: tag.text, isCloseTag: tag.isCloseTag });
+      console.warn('Adding tag:', tag.text);
+      currentSliceStartIndex = i + 1;
+      console.warn('new currentSliceStartIndex:', currentSliceStartIndex);
+    } else {
+      // If last slice, add it to text
+      if (i === html.length - 1) {
+        markupTokens.push({ type: 'text', text: slice });
+        console.warn('Adding last slice:', slice);
+      }
+    }
+  }
+
+  return markupTokens;
+}
+
+function findMarkdownTag(text: string, skipMarkdown?: boolean): MarkupToken | undefined {
+  // Create an array of markup tags regexps
+  const markupTagsDict: MarkupTag[] = [];
+  Object.entries(HTML_TAG_TO_ENTITY).forEach(arr => {
+    const [tag, type] = arr;
+
+    const openTag = new RegExp(`<${tag}(?:\\s+[^>]*)?>`, 'g');
+    const closeTag = new RegExp(`</${tag}>`, 'g');
+    
+    markupTagsDict.push({ regex: openTag, type, isCloseTag: false, isMarkdown: false });
+    markupTagsDict.push({ regex: closeTag, type, isCloseTag: true, isMarkdown: false });
+  });
+
+  if (!skipMarkdown) {
+    Object.entries(MARKDOWN_TAG_TO_ENTITY).forEach(arr => {
+      const [tag, type] = arr;
+      const markdownTag = new RegExp(escapeRegExp(tag), 'g');
+      markupTagsDict.push({ regex: markdownTag, type, isMarkdown: true});
+    });
+  }
+
+  for (const item of markupTagsDict) {
+    const { regex, type, isCloseTag } = item;
 
     let match: RegExpExecArray | null;
     while ((match = regex.exec(text)) !== null) {
       return {
         type: type,
-        start: offset + match.index,
-        end: offset + match.index + match[0].length,
-        isMarkdown: isMarkdown,
+        text: match[0],
+        isCloseTag: isCloseTag,
       };
     }
   }
 }
 
+function parseHtmlToDom(html: string): HTMLElement {
+  const parser = new DOMParser();
+  return parser.parseFromString(html, 'text/html').body.firstChild as HTMLElement;
+}
 
-// function parseHtmlToDom(html: string): Document {
-//   const parser = new DOMParser();
-//   return parser.parseFromString(html, 'text/html');
-// }
+function getElementAttributes(element: HTMLElement, type: ApiMessageEntityTypes): Record<string, string> {
+  switch (type) {
+    case ApiMessageEntityTypes.TextUrl:
+      return { url: (element as HTMLAnchorElement).href };
+    case ApiMessageEntityTypes.CustomEmoji:
+      return { documentId: element.dataset.documentId || '' };
+    case ApiMessageEntityTypes.Pre:
+      return { language: element.dataset.language || '' };
+    case ApiMessageEntityTypes.MentionName:
+      return { userId: element.dataset.userId || '' };
+    case ApiMessageEntityTypes.Blockquote:
+      return { canCollapse: element.dataset.canCollapse || 'false' };
+    default:
+      return {};
+  }
+}
 
-// function tokenizeMarkdown(text: string): MarkdownToken[] {
-//   const tokens: MarkdownToken[] = [];
-//   const patterns = [
-//     { regex: /\*\*(.*?)\*\*/g, type: ApiMessageEntityTypes.Bold },
-//     { regex: /__(.*?)__/g, type: ApiMessageEntityTypes.Italic },
-//     { regex: /~~(.*?)~~/g, type: ApiMessageEntityTypes.Strike},
-//     { regex: /\|\|(.*?)\|\|/g, type: ApiMessageEntityTypes.Spoiler},
-//     { regex: /```(.*?)(?:<br>|\n)([\s\S]*?)(?:<br>|\n)```/g, type: ApiMessageEntityTypes.Pre},
-//     { regex: /`([^`]+)`/g, type: ApiMessageEntityTypes.Code },
-//     // quotes ?
-//     // 
-//   ];
-
-//   for (const { regex, type } of patterns) {
-//     let match: RegExpExecArray | null;
-
-//     while ((match = regex.exec(text)) !== null) {
-//       console.warn('match:', match);
-//       const markdownToken: MarkdownToken = {
-//         type: type as MarkdownToken['type'],
-//         start: match.index,
-//         end: match.index + match[0].length,
-//         content: '',
-//       }
-
-//       // Update content based on the type
-//       if (type === ApiMessageEntityTypes.Pre) {
-//         markdownToken.language = match[1] || undefined;
-//         markdownToken.content = match[2] || '';
-//       } else if (type === ApiMessageEntityTypes.Code) {
-//         const matchIndex = match.index;
-//         // Skip code blocks inside pre blocks
-//         if (tokens.some(token => token.type === ApiMessageEntityTypes.Pre && token.start < matchIndex && token.end > matchIndex)) {
-//           continue;
-//         }
-//         markdownToken.content = match[1];
-//       } else {
-//         markdownToken.content = match[1];
-//       }
-
-//       tokens.push(markdownToken);
-//     }
-//   }
-
-//   // Sort tokens by start position to handle nested cases
-//   tokens.sort((a, b) => a.start - b.start);
-
-//   return tokens;
-// }
-
-// function convertDomToAst(dom: Document): { entities: ApiMessageEntityToken[]; textContent: string } {
-//   const tokens: ApiMessageEntityToken[] = [];
-//   let textContent = '';
-//   let currentOffset = 0;
-
-//   function walk(node: Node) {
-//     if (node.nodeType === Node.TEXT_NODE) {
-//       const nodeText = node.textContent || '';
-//       textContent += nodeText;
-//       currentOffset += nodeText.length;
-//     } else if (node.nodeType === Node.ELEMENT_NODE) {
-//       const element = node as HTMLElement;
-//       const tagName = element.nodeName;
-//       const entityType = HTML_TAG_TO_ENTITY[tagName] || ApiMessageEntityTypes.Unknown;
-
-//       if (entityType === ApiMessageEntityTypes.Unknown) {
-//         if (tagName === 'BR') {
-//           textContent += '\n';
-//           currentOffset++;
-//         } else {
-//           Array.from(element.childNodes).forEach(walk);
-//         }
-//       } else if (entityType === ApiMessageEntityTypes.CustomEmoji) {
-//         const attributes = getElementAttributes(element, entityType);
-//         const emojiText = (element as HTMLImageElement).alt || '';
-//         textContent += emojiText;
-//         const startOffset = currentOffset;
-//         currentOffset += emojiText.length;
-//         if (attributes.documentId) {
-//           tokens.push({
-//             type: entityType,
-//             offset: startOffset,
-//             content: emojiText,
-//             length: emojiText.length,
-//             attributes,
-//           });
-//         }
-//       } else {
-//         const startOffset = currentOffset;
-//         const attributes = getElementAttributes(element, entityType);
-//         Array.from(element.childNodes).forEach(walk);
-//         const length = currentOffset - startOffset;
-//         if (length > 0) {
-//           tokens.push({
-//             type: entityType,
-//             offset: startOffset,
-//             content: textContent.slice(startOffset, currentOffset),
-//             length,
-//             attributes,
-//           });
-//         }
-//       }
-//     }
-//   }
-
-//   Array.from(dom.body.childNodes).forEach(walk);
-
-//   return {
-//     entities: tokens.filter(token => token.type !== ApiMessageEntityTypes.Unknown && token.length > 0),
-//     textContent,
-//   };
-// }
-
-// function convertAstToFormattedText(entities: ApiMessageEntityToken[], textContent: string): ApiFormattedText {
-//   return {
-//     text: textContent.trim(),
-//     entities: entities.length ? entities.map(createApiEntity) : undefined,
-//   };
-// }
-
-// function getElementAttributes(element: HTMLElement, type: ApiMessageEntityTypes): Record<string, string> {
-//   switch (type) {
-//     case ApiMessageEntityTypes.TextUrl:
-//       return { url: (element as HTMLAnchorElement).href };
-//     case ApiMessageEntityTypes.CustomEmoji:
-//       return { documentId: element.dataset.documentId || '' };
-//     case ApiMessageEntityTypes.Pre:
-//       return { language: element.dataset.language || '' };
-//     case ApiMessageEntityTypes.MentionName:
-//       return { userId: element.dataset.userId || '' };
-//     case ApiMessageEntityTypes.Blockquote:
-//       return { canCollapse: element.dataset.canCollapse || 'false' };
-//     default:
-//       return {};
-//   }
-// }
-
-// function createApiEntity(token: ApiMessageEntityToken): ApiMessageEntity {
-//   const baseEntity = { offset: token.offset, length: token.length };
-//   switch (token.type) {
-//     case ApiMessageEntityTypes.TextUrl:
-//       return { ...baseEntity, type: ApiMessageEntityTypes.TextUrl, url: token.attributes?.url || '' };
-//     case ApiMessageEntityTypes.CustomEmoji:
-//       return { ...baseEntity, type: ApiMessageEntityTypes.CustomEmoji, documentId: token.attributes?.documentId || '' };
-//     case ApiMessageEntityTypes.Pre:
-//       return { ...baseEntity, type: ApiMessageEntityTypes.Pre, language: token.attributes?.language };
-//     case ApiMessageEntityTypes.MentionName:
-//       return { ...baseEntity, type: ApiMessageEntityTypes.MentionName, userId: token.attributes?.userId || '' };
-//     case ApiMessageEntityTypes.Blockquote:
-//       return { ...baseEntity, type: ApiMessageEntityTypes.Blockquote, canCollapse: token.attributes?.canCollapse === 'true' };
-//     default:
-//       return { ...baseEntity, type: token.type } as ApiMessageEntity;
-//   }
-// }

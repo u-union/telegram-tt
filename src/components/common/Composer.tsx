@@ -1064,18 +1064,7 @@ const Composer: FC<OwnProps & StateProps> = ({
       }
     }
 
-    let { text: oldText, entities: oldEntities } = parseHtmlAsFormattedText(getHtml());
-
-    let { text: newText, entities: newEntities } = parseHtmlAsFormattedTextNew(getHtml());
-    console.warn(`oldText:\n${oldText}\nnewText:\n${newText}\nisSame: ${oldText === newText}`);
-    console.warn('oldEntities: ', oldEntities);
-    console.warn('newEntities: ', newEntities);
-    
-    const text = newText;
-    const entities = newEntities;
-
-    // const text = oldText;
-    // const entities = oldEntities;
+    const { text, entities } = parseHtmlAsFormattedTextNew(getHtml());
 
     if (currentAttachments.length) {
       sendAttachments({

@@ -488,11 +488,7 @@ export interface ApiStoryForwardInfo {
 }
 
 export type ApiMessageEntityDefault = {
-  type: Exclude<
-  `${ApiMessageEntityTypes}`,
-  `${ApiMessageEntityTypes.Pre}` | `${ApiMessageEntityTypes.TextUrl}` | `${ApiMessageEntityTypes.MentionName}` |
-  `${ApiMessageEntityTypes.CustomEmoji}` | `${ApiMessageEntityTypes.Blockquote}`
-  >;
+  type: ApiMessageEntityTypes;
   offset: number;
   length: number;
 };
