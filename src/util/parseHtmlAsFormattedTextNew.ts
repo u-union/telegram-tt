@@ -72,10 +72,10 @@ export default function parseHtmlAsFormattedTextNew(
   skipMarkdown = false
 ): ApiFormattedText {  
   console.warn('--------------------------------------------');
-
+  console.warn('html:', html);
   // Clean up the HTML and convert markdown links to HTML links
   html = preprocessText(html, withMarkdownLinks);
-  console.warn('html:', html);
+  console.warn('processedhtml:', html);
 
   // HTML -> Tokenize -> Tree
   const tree = parseHtmlToTree(html, skipMarkdown);
@@ -91,13 +91,17 @@ function preprocessText(html: string, withMarkdownLinks: boolean): string {
   let processedText = html.replace(/&nbsp;/g, ' ').trim().replace(/\u200b+/g, '');
 
   // Replace <br> tags with newlines (hanle <br*> and Safari <div><br></div>)
-  const newlineRegex = new RegExp('<br[^>\\n]*>|<div><br></div>', 'g');
+  const newlineRegex = new RegExp('<div><br></div>|<br[^>\\n]*>', 'g');
   processedText = processedText.replace(newlineRegex, '\n');
+
+  // Replace Safari <div>*</div> with newlines
+  const divRegex = new RegExp('<div>(.*?)</div>', 'g');
+  processedText = processedText.replace(divRegex, '\n$1');
 
   // Are emojii supported / custom emojii - regex
 
   // Replace '```' with '<pre>'
-  const preRegex = new RegExp('```(.*?)(?:\\n)([\\s\\S]*?)(?:\\n)```', 'gms');
+  const preRegex = new RegExp('(?:^|\\n)```(.*?)(?:\\n)([\\s\\S]*?)(?:\\n)```(?=\\n|$)', 'gms');
   processedText = processedText.replace(preRegex, '<pre data-language="$1">$2</pre>');
 
   // Replace '\n *spacing allowed* > *everything* \n' with '<blockquote>'

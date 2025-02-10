@@ -2855,7 +2855,8 @@ async function loadChats(
 
     if (!draft && !thread) return;
 
-    if (!selectDraft(global, chatId, MAIN_THREAD_ID)?.isLocal) {
+    const currentDraft = selectDraft(global, chatId, MAIN_THREAD_ID);
+    if (!currentDraft?.isLocal && !currentDraft?.text) {
       global = replaceThreadParam(
         global, chatId, MAIN_THREAD_ID, 'draft', draft,
       );

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from '../../../../lib/teact/teact';
 import { getActions } from '../../../../global';
 
-import type { ApiDraft, ApiMessage } from '../../../../api/types';
+import type { ApiDraft, ApiMessage, ApiMessageEntityCustomEmoji } from '../../../../api/types';
 import type { ThreadId } from '../../../../types';
 import type { Signal } from '../../../../util/signals';
 import { ApiMessageEntityTypes } from '../../../../api/types';
@@ -69,14 +69,16 @@ const useDraft = ({
   const updateDraft = useLastCallback((prevState: { chatId?: string; threadId?: ThreadId } = {}) => {
     if (isDisabled || isEditing || !isTouchedRef.current) return;
 
-    const html = getHtml();
+    const html = parseHtmlAsFormattedText(getHtml());
 
-    if (html) {
+    // If the draft is the same as the current text, don't save it
+    if (JSON.stringify(draft?.text) === JSON.stringify(html)) return;
+    if (html && html?.text) {
       requestMeasure(() => {
         saveDraft({
           chatId: prevState.chatId ?? chatId,
           threadId: prevState.threadId ?? threadId,
-          text: parseHtmlAsFormattedText(html),
+          text: html,
         });
       });
     } else {
@@ -113,7 +115,7 @@ const useDraft = ({
     setHtml(getTextWithEntitiesAsHtml(draft.text));
 
     const customEmojiIds = draft.text?.entities
-      ?.map((entity) => entity.type === ApiMessageEntityTypes.CustomEmoji && entity.documentId)
+      ?.map((entity) => entity.type === ApiMessageEntityTypes.CustomEmoji ? (entity as ApiMessageEntityCustomEmoji).documentId : undefined)
       .filter(Boolean) || [];
     if (customEmojiIds.length) loadCustomEmojis({ ids: customEmojiIds });
   }, [chatId, threadId, draft, getHtml, setHtml, editedMessage, isDisabled]);
