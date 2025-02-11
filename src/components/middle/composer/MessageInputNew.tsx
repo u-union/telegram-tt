@@ -18,6 +18,8 @@ import type { ApiInputMessageReplyInfo } from '../../../api/types';
 import type { IAnchorPosition, ISettings, ThreadId } from '../../../types';
 
 import { ComposerType } from "../../common/Composer";
+import renderText from "../../common/helpers/renderText";
+import Icon from '../../common/icons/Icon';
 
 import buildClassName from '../../../util/buildClassName';
 import focusEditableElement from "../../../util/focusEditableElement";
@@ -28,7 +30,6 @@ import { IS_ANDROID, IS_EMOJI_SUPPORTED, IS_IOS, IS_TOUCH_ENV } from '../../../u
 import { debounce } from "../../../util/schedulers";
 import captureKeyboardListeners from "../../../util/captureKeyboardListeners";
 
-import Icon from '../../common/icons/Icon';
 import Button from '../../ui/Button';
 import TextTimer, { TextTimerDetails } from '../../ui/TextTimer';
 import TextFormatter from './TextFormatter.async';
@@ -56,6 +57,7 @@ type OwnProps = {
   canSendPlainText?: boolean;
   captionLimit?: number;
   editableInputId: string;
+  forcedPlaceholder?: string;
   getHtmlInputText: Signal<string>;
   hasAttachments: boolean;
   isNeedPremium?: boolean;
@@ -89,9 +91,10 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   canSendPlainText,
   captionLimit,
   editableInputId,
+  forcedPlaceholder,
   hasAttachments,
   getHtmlInputText,
-  isNeedPremium, // in Composer.tsx - isNeedPremium = isContactRequirePremium && isInStoryViewer
+  isNeedPremium,
   isReady,
   placeholder,
   replyInfo,
@@ -122,6 +125,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const isStoryInput = type === 'story';
   const isAttachmentModalInput = type === 'caption';
   const isActive = isAttachmentModalInput === hasAttachments;
+  const isNeedPremiumInStory = isStoryInput && isNeedPremium;
   
   const { isMobile } = useAppLayout();
   const isMobileDevice = !!isMobile && (IS_IOS || IS_ANDROID);
@@ -169,11 +173,11 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const inputScrollerClass = buildClassName(
     'custom-scroll',
     INPUT_SCROLLER_CLASS,
-    isNeedPremium && 'is-need-premium',
+    isNeedPremiumInStory && 'is-need-premium',
   )
   const inputScrollerContentClass = buildClassName(
     'input-scroller-content',
-    isNeedPremium && 'is-need-premium'
+    isNeedPremiumInStory && 'is-need-premium'
   );
 
   const inputBoxClass = useDerivedState(() => {
@@ -187,7 +191,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const inputPlaceholderClass = buildClassName(
     'placeholder-text',
     !isAttachmentModalInput && !canSendPlainText && 'with-icon',
-    isNeedPremium && 'is-need-premium'
+    isNeedPremiumInStory && 'is-need-premium'
   );
 
   /**
@@ -265,7 +269,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    * Manually focus on the input box
    */
   const focusOnInputBox = useLastCallback(() => {
-    if (!inputRef.current || isNeedPremium) return;
+    if (!inputRef.current || isNeedPremiumInStory) return;
 
     if (getIsHeavyAnimating()) {
       setTimeout(focusOnInputBox, INPUT_BOX_FOCUS_DELAY_MS);
@@ -303,7 +307,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   const handleMessageInputClick = useLastCallback(() => {
     // If Input is forbidden, show notification
-    if (!isAttachmentModalInput && !canSendPlainText && isNeedPremium) {
+    if (!isAttachmentModalInput && !canSendPlainText && isNeedPremiumInStory) {
       showAllowedMessageTypesNotification({ chatId });
     }
   });
@@ -484,10 +488,10 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
           // TODO: handle android context menu and selection
           // onContextMenu={IS_ANDROID ? handleAndroidContextMenu : undefined}
           // onTouchCancel={IS_ANDROID ? processSelectionWithTimeout : undefined}
-          onFocus={!isNeedPremium ? onInputBoxFocus : undefined}
-          onBlur={!isNeedPremium ? onInputBoxBlur : undefined}
+          onFocus={!isNeedPremiumInStory ? onInputBoxFocus : undefined}
+          onBlur={!isNeedPremiumInStory ? onInputBoxBlur : undefined}
           />
-          <span
+{          !forcedPlaceholder && (<span
             ref={inputBoxPlaceholderRef}
             className={inputPlaceholderClass}
             dir="auto"
@@ -497,12 +501,12 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
             {isPlaceholderTimerDisplayed && timerPlaceholderData ?
               <TextTimer details={timerPlaceholderData} onEnd={hidePlaceholderTimer} />
               : placeholder}
-            {isStoryInput && isNeedPremium && (
+            {isNeedPremiumInStory && (
               <Button className="unlock-button" size="tiny" color="adaptive" onClick={() => openPremiumModal}>
                 {lang('StoryRepliesLockedButton')}
               </Button>
             )}
-          </span>
+          </span>)}
           <canvas ref={sharedCanvasRef} className="shared-canvas"/>
           <canvas ref={sharedCanvasHqRef} className="shared-canvas"/>
           <div ref={absoluteContainerRef} className="absolute-video-container"/>
@@ -519,13 +523,14 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         </div>
       )}
       <TextFormatter
+        getHtml={getHtmlInputText}
         isOpen={isTextFormatterOpen}
         anchorPosition={textFormatterAnchorPosition}
         selectedRange={selectedRange}
         setSelectedRange={setSelectedRange}
         onClose={() => {hideTextFormatter(); removeAllSelections();}}
       />
-      {/* {forcedPlaceholder && <span className="forced-placeholder">{renderText(forcedPlaceholder!)}</span>} */}
+      {forcedPlaceholder && <span className="forced-placeholder">{renderText(forcedPlaceholder!)}</span>}
     </div>
   );
 }

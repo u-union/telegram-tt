@@ -26,6 +26,7 @@ import Button from '../../ui/Button';
 import './TextFormatter.scss';
 
 export type OwnProps = {
+  getHtml: () => string;
   isOpen: boolean;
   anchorPosition?: IAnchorPosition;
   selectedRange?: Range;
@@ -52,9 +53,11 @@ const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
   CODE: 'monospace',
   SPAN: 'spoiler',
 };
+
 const fragmentEl = document.createElement('div');
 
 const TextFormatter: FC<OwnProps> = ({
+  getHtml,
   isOpen,
   anchorPosition,
   selectedRange,
@@ -71,6 +74,36 @@ const TextFormatter: FC<OwnProps> = ({
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [inputClassName, setInputClassName] = useState<string | undefined>();
   const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
+
+  const updateFormatState = useLastCallback(() => {
+    const newFormats: ISelectedTextFormats = {};
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+      setSelectedTextFormats(newFormats);
+      onClose();
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    let node: Node | null = range.commonAncestorContainer;
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+  
+    while (node && node.nodeType === Node.ELEMENT_NODE) {
+      const tagName = (node as HTMLElement).tagName;
+      const formatKey = TEXT_FORMAT_BY_TAG_NAME[tagName];
+      if (formatKey) {
+        newFormats[formatKey] = true;
+      }
+      node = (node as HTMLElement).parentElement;
+    }
+    console.warn('newFormats', newFormats);
+    setSelectedTextFormats(newFormats);
+  });
 
   useEffect(() => (isOpen ? captureEscKeyListener(onClose) : undefined), [isOpen, onClose]);
   useVirtualBackdrop(
@@ -98,42 +131,9 @@ const TextFormatter: FC<OwnProps> = ({
   }, [closeLinkControl, shouldRender]);
 
   useEffect(() => {
-    if (!isOpen || !selectedRange) {
-      return;
-    }
-
-    const selectedFormats: ISelectedTextFormats = {};
-    let { parentElement } = selectedRange.commonAncestorContainer;
-    while (parentElement && parentElement.id !== EDITABLE_INPUT_ID) {
-      const textFormat = TEXT_FORMAT_BY_TAG_NAME[parentElement.tagName];
-      if (textFormat) {
-        selectedFormats[textFormat] = true;
-      }
-
-      parentElement = parentElement.parentElement;
-    }
-
-    setSelectedTextFormats(selectedFormats);
-  }, [isOpen, selectedRange, openLinkControl]);
-
-  const restoreSelection = useLastCallback(() => {
-    if (!selectedRange) {
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(selectedRange);
-    }
-  });
-
-  const updateSelectedRange = useLastCallback(() => {
-    const selection = window.getSelection();
-    if (selection) {
-      setSelectedRange(selection.getRangeAt(0));
-    }
-  });
+    if (!isOpen || !selectedRange) return
+    updateFormatState();
+  }, [isOpen, selectedRange, openLinkControl, getHtml, updateFormatState]);
 
   const getSelectedText = useLastCallback((shouldDropCustomEmoji?: boolean) => {
     if (!selectedRange) {
@@ -215,10 +215,6 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       element.replaceWith(element.textContent);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        spoiler: false,
-      }));
 
       return;
     }
@@ -231,39 +227,25 @@ const TextFormatter: FC<OwnProps> = ({
   });
 
   const handleBoldText = useLastCallback(() => {
-    setSelectedTextFormats((selectedFormats) => {
-      // Somehow re-applying 'bold' command to already bold text doesn't work
-      document.execCommand(selectedFormats.bold ? 'removeFormat' : 'bold');
-      Object.keys(selectedFormats).forEach((key) => {
-        if ((key === 'italic' || key === 'underline') && Boolean(selectedFormats[key])) {
+    // Somehow re-applying 'bold' command to already bold text doesn't work
+    if (selectedTextFormats.bold) {
+      document.execCommand('removeFormat');
+      Object.keys(selectedTextFormats).forEach((key) => {
+        if ((key === 'italic' || key === 'underline') && Boolean(selectedTextFormats[key])) {
           document.execCommand(key);
         }
       });
-
-      updateSelectedRange();
-      return {
-        ...selectedFormats,
-        bold: !selectedFormats.bold,
-      };
-    });
+    } else {
+      document.execCommand('bold');
+    }
   });
 
   const handleItalicText = useLastCallback(() => {
     document.execCommand('italic');
-    updateSelectedRange();
-    setSelectedTextFormats((selectedFormats) => ({
-      ...selectedFormats,
-      italic: !selectedFormats.italic,
-    }));
   });
 
   const handleUnderlineText = useLastCallback(() => {
     document.execCommand('underline');
-    updateSelectedRange();
-    setSelectedTextFormats((selectedFormats) => ({
-      ...selectedFormats,
-      underline: !selectedFormats.underline,
-    }));
   });
 
   const handleStrikethroughText = useLastCallback(() => {
@@ -279,11 +261,6 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       element.replaceWith(element.textContent);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        strikethrough: false,
-      }));
-
       return;
     }
 
@@ -305,11 +282,6 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       element.replaceWith(element.textContent);
-      setSelectedTextFormats((selectedFormats) => ({
-        ...selectedFormats,
-        monospace: false,
-      }));
-
       return;
     }
 
@@ -335,7 +307,6 @@ const TextFormatter: FC<OwnProps> = ({
     }
 
     const text = getSelectedText(true);
-    restoreSelection();
     document.execCommand(
       'insertHTML',
       false,

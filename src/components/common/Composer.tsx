@@ -1,6 +1,6 @@
 import type { FC } from '../../lib/teact/teact';
 import React, {
-  memo, useEffect, useMemo, useRef, useState,
+  memo, useEffect, useLayoutEffect, useMemo, useRef, useState,
 } from '../../lib/teact/teact';
 import { getActions, getGlobal, withGlobal } from '../../global';
 
@@ -524,10 +524,10 @@ const Composer: FC<OwnProps & StateProps> = ({
     [chat, chatFullInfo, isChatWithBot, isInStoryViewer],
   );
 
-  const isNeedPremium = isContactRequirePremium && isInStoryViewer;
+  const isNeedPremiumInStory = isContactRequirePremium && isInStoryViewer;
 
   const hasWebPagePreview = !hasAttachments && canAttachEmbedLinks && !noWebPage && Boolean(webPagePreview);
-  const isComposerBlocked = (isNeedPremium || !canSendPlainText) && !editingMessage;
+  const isComposerBlocked = (isNeedPremiumInStory || !canSendPlainText) && !editingMessage;
 
   useEffect(() => {
     if (!hasWebPagePreview) {
@@ -596,6 +596,7 @@ const Composer: FC<OwnProps & StateProps> = ({
     handleSetAttachments,
   } = useAttachmentModal({
     attachments,
+    setHtml,
     setAttachments,
     fileSizeLimit,
     chatId,
@@ -1649,7 +1650,7 @@ const Composer: FC<OwnProps & StateProps> = ({
           editingMessage={editingMessage}
         />
       )}
-      {shouldRenderReactionSelector && !isNeedPremium && (
+      {shouldRenderReactionSelector && !isNeedPremiumInStory && (
         <ReactionSelector
           topReactions={topReactions}
           allAvailableReactions={availableReactions}
@@ -1730,10 +1731,10 @@ const Composer: FC<OwnProps & StateProps> = ({
         onClose={closeChatCommandTooltip}
       />
       <div className={
-        buildClassName('composer-wrapper', isInStoryViewer && 'with-story-tweaks', isNeedPremium && 'is-need-premium')
+        buildClassName('composer-wrapper', isInStoryViewer && 'with-story-tweaks', isNeedPremiumInStory && 'is-need-premium')
       }
       >
-        {!isNeedPremium && (
+        {!isNeedPremiumInStory && (
           <svg className="svg-appendix" width="9" height="20">
             <defs>
               <filter
@@ -1832,7 +1833,7 @@ const Composer: FC<OwnProps & StateProps> = ({
               )}
             </>
           )}
-          {((!isComposerBlocked || canSendGifs || canSendStickers) && !isNeedPremium) && (
+          {((!isComposerBlocked || canSendGifs || canSendStickers) && !isNeedPremiumInStory) && (
             <SymbolMenuButton
               chatId={chatId}
               threadId={threadId}
@@ -1889,7 +1890,7 @@ const Composer: FC<OwnProps & StateProps> = ({
             // onSuppressedFocus={closeSymbolMenu}
             // onFocus={markInputHasFocus}
             // onBlur={unmarkInputHasFocus}
-            // isNeedPremium={isNeedPremium}
+            // isNeedPremiumInStory={isNeedPremiumInStory}
           /> */}
           <MessageInputNew
             inputRef={inputRef}
@@ -1901,9 +1902,10 @@ const Composer: FC<OwnProps & StateProps> = ({
             canSendPlainText={!isComposerBlocked}
             captionLimit={leftChars}
             editableInputId={editableInputId}
+            forcedPlaceholder={inlineBotHelp}
             getHtmlInputText={getHtml}
             hasAttachments={hasAttachments}
-            isNeedPremium={isNeedPremium}
+            isNeedPremium={isContactRequirePremium}
             isReady={isReady}
             // TODO: FUNCTION TO BUILD PLACEHOLDER
             placeholder={
@@ -1957,7 +1959,7 @@ const Composer: FC<OwnProps & StateProps> = ({
               {formatVoiceRecordDuration(currentRecordTime - startRecordTimeRef.current!)}
             </span>
           )}
-          {!isNeedPremium && (
+          {!isNeedPremiumInStory && (
             <AttachMenu
               chatId={chatId}
               threadId={threadId}
