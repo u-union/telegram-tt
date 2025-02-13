@@ -495,7 +495,6 @@ const Settings: FC<OwnProps> = ({
       <>
         <SettingsHeader
           currentScreen={currentScreen}
-          onReset={handleReset}
           onScreenSelect={onScreenSelect}
           editedFolderId={foldersState.folderId}
         />

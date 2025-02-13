@@ -20,14 +20,12 @@ import MenuItem from '../../ui/MenuItem';
 type OwnProps = {
   currentScreen: SettingsScreens;
   editedFolderId?: number;
-  onReset: () => void;
   onScreenSelect: (screen: SettingsScreens) => void;
 };
 
 const SettingsHeader: FC<OwnProps> = ({
   currentScreen,
   editedFolderId,
-  onReset,
   onScreenSelect,
 }) => {
   const {
@@ -286,15 +284,6 @@ const SettingsHeader: FC<OwnProps> = ({
 
   return (
     <div className="left-header">
-      <Button
-        round
-        size="smaller"
-        color="translucent"
-        onClick={onReset}
-        ariaLabel={oldLang('AccDescrGoBack')}
-      >
-        <Icon name="arrow-left" />
-      </Button>
       {renderHeaderContent()}
       <ConfirmDialog
         isOpen={isSignOutDialogOpen}

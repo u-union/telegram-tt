@@ -2,7 +2,6 @@ import type { FC } from '../../../lib/teact/teact';
 import React, {
   memo, useEffect, useRef, useState,
 } from '../../../lib/teact/teact';
-import { getActions } from '../../../global';
 
 import type { FolderEditDispatch } from '../../../hooks/reducers/useFoldersReducer';
 import type { SettingsScreens } from '../../../types';
@@ -68,7 +67,6 @@ const LeftMain: FC<OwnProps> = ({
   onReset,
   onTopicSearch,
 }) => {
-  const { closeForumPanel } = getActions();
   const [isNewChatButtonShown, setIsNewChatButtonShown] = useState(IS_TOUCH_ENV);
   const [isElectronAutoUpdateEnabled, setIsElectronAutoUpdateEnabled] = useState(false);
 
@@ -89,6 +87,7 @@ const LeftMain: FC<OwnProps> = ({
   } = useShowTransitionDeprecated(isAppUpdateAvailable || isElectronUpdateAvailable);
 
   const isMouseInside = useRef(false);
+  const lang = useOldLang();
 
   const handleMouseEnter = useLastCallback(() => {
     if (content !== LeftColumnContent.ChatList) {
@@ -113,17 +112,8 @@ const LeftMain: FC<OwnProps> = ({
     }, BUTTON_CLOSE_DELAY_MS);
   });
 
-  const handleSelectSettings = useLastCallback(() => {
-    onContentChange(LeftColumnContent.Settings);
-  });
-
   const handleSelectContacts = useLastCallback(() => {
     onContentChange(LeftColumnContent.Contacts);
-  });
-
-  const handleSelectArchived = useLastCallback(() => {
-    onContentChange(LeftColumnContent.Archived);
-    closeForumPanel();
   });
 
   const handleUpdateClick = useLastCallback(() => {
@@ -160,9 +150,7 @@ const LeftMain: FC<OwnProps> = ({
         autoCloseTimeout = undefined;
       }
     };
-  }, [content]);
-
-  const lang = useOldLang();
+  }, [content])
 
   return (
     <div
@@ -175,9 +163,6 @@ const LeftMain: FC<OwnProps> = ({
         content={content}
         contactsFilter={contactsFilter}
         onSearchQuery={onSearchQuery}
-        onSelectSettings={handleSelectSettings}
-        onSelectContacts={handleSelectContacts}
-        onSelectArchived={handleSelectArchived}
         onReset={onReset}
         shouldSkipTransition={shouldSkipTransition}
         isClosingSearch={isClosingSearch}
@@ -196,7 +181,6 @@ const LeftMain: FC<OwnProps> = ({
             case LeftColumnContent.ChatList:
               return (
                 <ChatFolders
-                  shouldHideFolderTabs={isForumPanelVisible}
                   onSettingsScreenSelect={onSettingsScreenSelect}
                   onLeftColumnContentChange={onContentChange}
                   foldersDispatch={foldersDispatch}

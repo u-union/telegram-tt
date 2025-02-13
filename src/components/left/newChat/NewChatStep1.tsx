@@ -12,7 +12,6 @@ import useOldLang from '../../../hooks/useOldLang';
 
 import Icon from '../../common/icons/Icon';
 import PeerPicker from '../../common/pickers/PeerPicker';
-import Button from '../../ui/Button';
 import FloatingActionButton from '../../ui/FloatingActionButton';
 
 export type OwnProps = {
@@ -88,15 +87,6 @@ const NewChatStep1: FC<OwnProps & StateProps> = ({
   return (
     <div className="NewChat step-1">
       <div className="left-header">
-        <Button
-          round
-          size="smaller"
-          color="translucent"
-          onClick={onReset}
-          ariaLabel="Return to Chat List"
-        >
-          <Icon name="arrow-left" />
-        </Button>
         <h3>{lang('GroupAddMembers')}</h3>
       </div>
       <div className="NewChat-inner step-1">

@@ -1,0 +1,166 @@
+@use "../../../styles/mixins";
+
+#FolderMenu {
+  --folder-menu-width: 3.5rem;
+  --folder-icon-size: 1.7rem;
+  --folder-name-size: 0.6rem;
+
+  @media (min-width: 926px) {
+    --folder-menu-width: 4.5rem;
+    --folder-icon-size: 1.8rem;
+    --folder-name-size: 0.7rem;
+  }
+
+  @media (min-width: 1276px) {
+    --folder-menu-width: 6rem;
+    --folder-icon-size: 2rem;
+    --folder-name-size: 0.85rem;
+  }
+
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background);
+  width: var(--folder-menu-width);
+  border-right: 1px solid var(--color-borders);
+  z-index: 1;
+
+  .LeftColumn-menu-header {
+    padding: 0.375rem;
+    height: var(--header-height);
+
+    .DropdownMenuFiller {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .DropdownMenu {
+      justify-items: center;
+    }
+
+    .animated-menu-icon {
+      opacity: 0.5;
+      justify-self: center;
+      &,
+      &::before,
+      &::after {
+        width: 1.125rem;
+        height: 0.14rem;
+        border-radius: 0.125rem;
+        background-color: var(--color-icon-secondary);
+        transition: transform 0.25s;
+        transform: rotate(0);
+      }
+
+      &::before,
+      &::after {
+        position: absolute;
+        left: 0;
+        content: "";
+      }
+
+      &::before {
+        top: -0.3125rem;
+      }
+
+      &::after {
+        top: 0.3125rem;
+      }
+
+      &.state-back {
+        transform: rotate(180deg);
+
+        &::before {
+          top: -0.34rem;
+          transform: rotate(45deg) scaleX(0.75) translate(0.375rem, -0.1875rem);
+        }
+
+        &::after {
+          top: 0.34rem;
+          transform: rotate(-45deg) scaleX(0.75) translate(0.375rem, 0.1875rem);
+        }
+      }
+
+      &.no-animation {
+        transition: none;
+
+        &::before,
+        &::after {
+          transition: none;
+        }
+      }
+    }
+
+    .MenuItem .Toggle {
+      margin-inline-start: auto;
+    }
+
+    .MenuItem.compact .Toggle {
+      transform: scale(0.75);
+      margin-inline-end: -0.125rem;
+    }
+
+    .MenuItem.compact .Switcher {
+      transform: scale(0.75);
+    }
+
+    .Menu .bubble {
+      min-width: 17rem;
+      max-height: calc(100 * var(--vh) - 3.75rem);
+
+      overflow-y: auto;
+    }
+
+    // @optimization
+    @include mixins.while-transition() {
+      .Menu .bubble {
+        transition: none !important;
+      }
+    }
+  }
+
+  .LeftColumn-menu-items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 0.5rem 0;
+
+    .LeftColumn-menu-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.5rem;
+
+      .Button {
+        display: flex;
+        flex-direction: column;
+        text-transform: none;
+        padding: 0;
+        height: 100%;
+
+        // --color-chat-active:
+        color: var(--color-text-secondary);
+        &:hover {
+          color: var(--color-text);
+        }
+
+        .folderIcon {
+          font-size: var(--folder-icon-size);
+          opacity: 0.6;
+        }
+
+        .folderName {
+          margin-top: 0.2rem;
+          font-family: 'Roboto', sans-serif;
+          font-size: var(--folder-name-size);
+          font-weight: 400;
+          opacity: 0.8;
+          overflow: hidden;
+          width: 100%;
+        }
+      }
+    }
+  }
+}

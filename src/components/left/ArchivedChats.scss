@@ -28,10 +28,6 @@
           calc(clamp(var(--left-column-min-width), var(--left-column-width), var(--left-column-max-width)) - 4.375rem)
         );
     }
-
-    &.disable-transition {
-      transition: none;
-    }
   }
 
   .archived-chats-more-menu {

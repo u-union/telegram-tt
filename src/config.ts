@@ -316,6 +316,7 @@ export const RESTRICTED_EMOJI_SET_ID = '7173162320003080';
 export const CHANNEL_ID_LENGTH = 14; // 14 symbols, based on TDLib's `ZERO_CHANNEL_ID = -1000000000000`
 export const DEFAULT_GIF_SEARCH_BOT_USERNAME = 'gif';
 export const ALL_FOLDER_ID = 0;
+export const ALL_FOLDER_MENU_ICON = 'chats';
 export const ARCHIVED_FOLDER_ID = 1;
 export const SAVED_FOLDER_ID = -1;
 export const DELETED_COMMENTS_CHANNEL_ID = '-1000000000777';

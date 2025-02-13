@@ -15,12 +15,9 @@ import useHistoryBack from '../../hooks/useHistoryBack';
 import useLastCallback from '../../hooks/useLastCallback';
 import useOldLang from '../../hooks/useOldLang';
 import useShowTransitionDeprecated from '../../hooks/useShowTransitionDeprecated';
-import useLeftHeaderButtonRtlForumTransition from './main/hooks/useLeftHeaderButtonRtlForumTransition';
 
-import Icon from '../common/icons/Icon';
 import StoryRibbon from '../story/StoryRibbon';
 import StoryToggler from '../story/StoryToggler';
-import Button from '../ui/Button';
 import DropdownMenu from '../ui/DropdownMenu';
 import MenuItem from '../ui/MenuItem';
 import ChatList from './main/ChatList';
@@ -64,11 +61,6 @@ const ArchivedChats: FC<OwnProps> = ({
   });
 
   const {
-    shouldDisableDropdownMenuTransitionRef,
-    handleDropdownMenuTransitionEnd,
-  } = useLeftHeaderButtonRtlForumTransition(isForumPanelOpen);
-
-  const {
     shouldRender: shouldRenderTitle,
     transitionClassNames: titleClassNames,
   } = useShowTransitionDeprecated(!isForumPanelOpen);
@@ -91,21 +83,6 @@ const ArchivedChats: FC<OwnProps> = ({
     <div className="ArchivedChats">
       <div className={buildClassName('left-header', !shouldRenderStoryRibbon && 'left-header-shadow')}>
         {lang.isRtl && <div className="DropdownMenuFiller" />}
-        <Button
-          round
-          size="smaller"
-          color="translucent"
-          onClick={onReset}
-          ariaLabel="Return to chat list"
-          className={buildClassName(
-            lang.isRtl && 'rtl',
-            isForumPanelVisible && lang.isRtl && 'right-aligned',
-            shouldDisableDropdownMenuTransitionRef.current && lang.isRtl && 'disable-transition',
-          )}
-          onTransitionEnd={handleDropdownMenuTransitionEnd}
-        >
-          <Icon name="arrow-left" />
-        </Button>
         {shouldRenderTitle && <h3 className={titleClassNames}>{lang('ArchivedChats')}</h3>}
         <div className="story-toggler-wrapper">
           <StoryToggler canShow isArchived />
@@ -114,7 +91,6 @@ const ArchivedChats: FC<OwnProps> = ({
           <DropdownMenu
             className="archived-chats-more-menu"
             positionX="right"
-            onTransitionEnd={lang.isRtl ? handleDropdownMenuTransitionEnd : undefined}
           >
             <MenuItem icon="archive-from-main" onClick={handleDisplayArchiveInChats}>
               {lang('lng_context_archive_to_list')}
