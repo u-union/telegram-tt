@@ -19,11 +19,13 @@ const FolderMenuButton: FC<{
   icon: IconName;
   index: number;
   isActive: boolean;
+  isBlocked?: boolean;
   name: string;
   onClick: (index: number) => void;
-}> = ({ badgeCount, contextActions, icon, index, isActive, name, onClick }) => {
+}> = ({ badgeCount, contextActions, icon, index, isActive, isBlocked, name, onClick }) => {
   const { isMobile } = useAppLayout();
   const buttonRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const {
     contextMenuAnchor, handleContextMenu, handleBeforeContextMenu, handleContextMenuClose,
@@ -40,7 +42,7 @@ const FolderMenuButton: FC<{
     <div
       ref={buttonRef}
       className="LeftColumn-menu-item"
-      style={`height: ${CHAT_HEIGHT_PX}px`}
+      style={`height: ${CHAT_HEIGHT_PX}px; min-height: ${CHAT_HEIGHT_PX}px;`}
       onMouseDown={handleMouseDownFolderItem}
       onContextMenu={handleContextMenu}
     >
@@ -54,15 +56,24 @@ const FolderMenuButton: FC<{
         <Icon className="folderIcon" name={icon} />
         <span className={buildClassName("folderName", isMobile && "hideText")} >{name}</span>
       </Button>
-      {badgeCount ? <span className="badge">{badgeCount}</span> : undefined}
+
+      {isBlocked ? <Icon name="lock-badge" className="badge" /> :
+        !!badgeCount && <span className="badge">{badgeCount}</span>}
+
       {contextActions && contextMenuAnchor !== undefined && (
         <Menu
+          ref={menuRef}
           isOpen={isContextMenuOpen}
           anchor={contextMenuAnchor}
           onClose={handleContextMenuClose}
           onCloseAnimationEnd={handleContextMenuHide}
           autoClose
-        >
+          withPortal
+          getTriggerElement={useLastCallback(() => buttonRef.current)}
+          getMenuElement={useLastCallback(() => menuRef.current)}
+          getRootElement={useLastCallback(() => buttonRef.current)}
+          getLayout={useLastCallback(() => ({ withPortal: true, positionX: 'left', positionY: 'bottom' }))}
+          >
           {contextActions.map((action) => (
             ('isSeparator' in action) ? (
               <MenuSeparator key={action.key || 'separator'} />

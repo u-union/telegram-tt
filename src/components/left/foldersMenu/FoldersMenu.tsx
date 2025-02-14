@@ -1,5 +1,5 @@
 import React, { FC, memo, useMemo, useRef, useEffect } from "../../../lib/teact/teact";
-import { ALL_FOLDER_ID, ALL_FOLDER_MENU_ICON, APP_NAME, DEBUG, IS_BETA } from "../../../config";
+import { ALL_FOLDER_ID, ALL_FOLDER_MENU_ICON, APP_NAME, CHAT_HEIGHT_PX, DEBUG, IS_BETA } from "../../../config";
 import { getActions, getGlobal, withGlobal } from "../../../global";
 import { selectTabState } from "../../../global/selectors/tabs";
 import { selectCurrentLimit } from "../../../global/selectors/limits";
@@ -108,7 +108,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
   const [isBotMenuOpen, markBotMenuOpen, unmarkBotMenuOpen] = useFlag();
 
   const versionString = IS_BETA ? `${APP_VERSION} Beta (${APP_REVISION})` : (DEBUG ? APP_REVISION : APP_VERSION);
-  
+
   // Create All Chats (default) folder manually
   const allChatsFolder: ApiChatFolder = useMemo(() => {
     return {
@@ -217,7 +217,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       });
     }
   }, [activeChatFolder, setActiveChatFolder]);
-  
+
   // Go to 'All Chats' when pressed Browser hist 'back' button
   useHistoryBack({
     isActive: !isInAllFolder,
@@ -341,11 +341,23 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
               icon={tab.icon as IconName || 'folder-badge'}
               index={i}
               isActive={i === activeChatFolder && isChatListContent}
+              isBlocked={tab.isBlocked}
               name={tab.title.toString()}
               onClick={handleSwitchTab}
             />);
-          })
+        })
         }
+        <div
+          className={buildClassName(
+            'LeftColumn-menu-tab-indicator',
+            !isChatListContent && 'tab-indicator-hidden',
+            'tab-indicator-animating', // can be used to disable animation
+          )}
+          style={`
+            height: ${CHAT_HEIGHT_PX * 0.6}px;
+            top: ${activeChatFolder * CHAT_HEIGHT_PX + CHAT_HEIGHT_PX * 0.2}px;
+          `}
+        ></div>
       </div>
     </div>
   );

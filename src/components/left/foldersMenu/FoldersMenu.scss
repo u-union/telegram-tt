@@ -5,16 +5,20 @@
   --folder-icon-size: 1.7rem;
   --folder-name-size: 0.6rem;
   --folder-badge-right: 0.4rem;
+  --button-top-margin: 0rem;
+  --button-badge-top: 0.1rem;
 
   @media (min-width: 926px) {
     --folder-menu-width: 4.5rem;
     --folder-icon-size: 1.8rem;
     --folder-name-size: 0.7rem;
     --folder-badge-right: 0.7rem;
+    --button-top-margin: 0.6rem;
+    --button-badge-top: 0.25rem;
   }
 
   @media (min-width: 1276px) {
-    --folder-menu-width: 6rem;
+    --folder-menu-width: 5.5rem;
     --folder-icon-size: 2rem;
     --folder-name-size: 0.85rem;
     --folder-badge-right: 1.5rem;
@@ -125,8 +129,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-
-    padding: 0.5rem 0;
+    position: relative;
+    margin: 0.5rem 0;
+    
+    // Scrollbar
+    overflow-y: auto;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { 
+      display: none;  // Safari fix
+    }
 
     .LeftColumn-menu-item {
       position: relative;
@@ -135,13 +146,14 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      padding: 0.5rem;
+      padding: 0.3rem;
 
       .Button {
         display: flex;
         flex-direction: column;
         text-transform: none;
         padding: 0;
+        margin-top: var(--button-top-margin);
         height: 100%;
 
         .folderIcon {
@@ -169,28 +181,52 @@
           opacity: 1;
         }
       }
-    }
 
-    .badge {
-      position: absolute;
-      top: 0.2rem;
-      right: var(--folder-badge-right);
-      
-      min-width: 1.25rem;
-      background: var(--color-primary);
-      border-radius: 0.75rem;
-      padding: 0 0.3125rem;
-      color: white;
-      font-size: 0.8rem;
-      line-height: 1.3125rem;
-      font-weight: var(--font-weight-medium);
-      text-align: center;
-      pointer-events: none;
+      .badge {
+        position: absolute;
+        top: var(--button-badge-top);
+        right: var(--folder-badge-right);
+        
+        min-width: 1.25rem;
+        background: var(--color-primary);
+        border-radius: 0.75rem;
+        padding: 0 0.3125rem;
+        color: white;
+        font-size: 0.8rem;
+        line-height: 1.3125rem;
+        font-weight: var(--font-weight-medium);
+        text-align: center;
+        pointer-events: none;
+  
+        body.is-ios &,
+        body.is-macos & {
+          line-height: 1.25rem;
+        }
 
-      body.is-ios &,
-      body.is-macos & {
-        line-height: 1.25rem;
+        &.icon {
+          top: calc(var(--button-badge-top) + 0.2rem);
+          right: calc(var(--folder-badge-right) - 0.1rem);
+          font-size: 1.2rem;
+          background: none;
+          color: var(--color-error-shade);
+        }
       }
+    }
+  }
+
+  .LeftColumn-menu-tab-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0.25rem;
+    background-color: var(--color-primary);
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+    transition: top 0.25s ease-in-out, opacity 0.4s ease-in-out;
+
+    &.tab-indicator-hidden {
+      top: -5rem !important;
+      opacity: 0;
     }
   }
 }
