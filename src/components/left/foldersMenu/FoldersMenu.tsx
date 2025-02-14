@@ -1,5 +1,5 @@
-import React, { FC, memo, useMemo, useRef, useLayoutEffect, useEffect } from "../../../lib/teact/teact";
-import { ALL_FOLDER_ID, ALL_FOLDER_MENU_ICON, APP_NAME, CHAT_HEIGHT_PX, DEBUG, IS_BETA } from "../../../config";
+import React, { FC, memo, useMemo, useRef, useEffect } from "../../../lib/teact/teact";
+import { ALL_FOLDER_ID, ALL_FOLDER_MENU_ICON, APP_NAME, DEBUG, IS_BETA } from "../../../config";
 import { getActions, getGlobal, withGlobal } from "../../../global";
 import { selectTabState } from "../../../global/selectors/tabs";
 import { selectCurrentLimit } from "../../../global/selectors/limits";
@@ -18,16 +18,16 @@ import { useFullscreenStatus } from "../../../hooks/window/useFullscreen";
 import { useFolderManagerForUnreadCounters } from "../../../hooks/useFolderManager";
 
 import buildClassName from "../../../util/buildClassName";
-import { IS_ELECTRON, IS_MAC_OS, IS_TOUCH_ENV } from "../../../util/windowEnvironment";
+import { IS_ELECTRON, IS_MAC_OS } from "../../../util/windowEnvironment";
 import captureEscKeyListener from "../../../util/captureEscKeyListener";
 import { MEMO_EMPTY_ARRAY } from "../../../util/memo";
 
-import Icon from "../../common/icons/Icon";
 import Button from "../../ui/Button";
 import DropdownMenu from "../../ui/DropdownMenu";
 import LeftSideMenuItems from "../main/LeftSideMenuItems";
 import { MenuItemContextAction } from "../../ui/ListItem";
 import { TabWithProperties } from "../../ui/TabList";
+import FolderMenuButton from "./FolderMenuButton";
 
 import './FoldersMenu.scss';
 
@@ -58,7 +58,6 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
   chatFoldersById,
   currentUserId,
   folderInvitesById,
-  isForumPanelOpen,
   maxFolders,
   maxFolderInvites,
   maxChatLists,
@@ -92,13 +91,17 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
   });
 
   const handleSwitchTab = useLastCallback((index: number) => {
+    // If content is not chat list, switch to chat list
+    if (content !== LeftColumnContent.ChatList) {
+      onContentChange(LeftColumnContent.ChatList);
+    }
     setActiveChatFolder({ activeChatFolder: index }, { forceOnHeavyAnimation: true });
   });
 
   const lang = useLang();
   const { isMobile } = useAppLayout();
   const isFullscreen = useFullscreenStatus();
-  const hasMenu = content === LeftColumnContent.ChatList;
+  const isChatListContent = content === LeftColumnContent.ChatList;
 
   const folderMenuRef = useRef<HTMLDivElement>(null);
   const folderCountersById = useFolderManagerForUnreadCounters();
@@ -182,13 +185,19 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
             openDeleteChatFolderModal({ folderId: id });
           },
         });
+      } else {
+        contextActions.push({
+          title: lang('NothingFound'),
+          icon: 'info',
+          handler: undefined,
+        });
       }
 
       return {
         id,
         title: title.text,
         icon: folder.emoticon,
-        badgeCount: id === ALL_FOLDER_ID ? 0 : folderCountersById[id]?.chatsCount, // do not show badge for All Chats
+        badgeCount: folderCountersById[id]?.chatsCount,
         isBadgeActive: Boolean(folderCountersById[id]?.notificationsCount),
         isBlocked,
         contextActions: contextActions?.length ? contextActions : undefined,
@@ -281,49 +290,23 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
     return ({ onTrigger, isOpen }) => (
       <Button
         round
-        ripple={hasMenu && !isMobile}
+        ripple={isChatListContent && !isMobile}
         size="smaller"
         color="translucent"
         className={isOpen ? 'active' : ''}
         // eslint-disable-next-line react/jsx-no-bind
-        onClick={hasMenu ? onTrigger : () => onReset()}
-        ariaLabel={hasMenu ? lang('AccDescrOpenMenu2') : 'Return to chat list'}
+        onClick={isChatListContent ? onTrigger : () => onReset()}
+        ariaLabel={isChatListContent ? lang('AccDescrOpenMenu2') : 'Return to chat list'}
       >
         <div className={buildClassName(
           'animated-menu-icon',
-          !hasMenu && 'state-back',
+          !isChatListContent && 'state-back',
           shouldSkipTransition && 'no-animation',
         )}
         />
       </Button>
     );
-  }, [hasMenu, isMobile, lang, onReset, shouldSkipTransition]);
-
-  // Buttons for foldersMenu
-  const FolderButton: FC<{
-    badgeCount?: number;
-    icon: IconName;
-    index: number;
-    isActive: boolean;
-    name: string;
-    onClick: (index: number) => void;
-  }> = useMemo(() => {
-    return ({ badgeCount, icon, index, isActive, name, onClick }) => (      
-      <div className="LeftColumn-menu-item" style={`height: ${CHAT_HEIGHT_PX}px`}>
-        <Button
-          className={isActive ? 'button-active' : ''}
-          ripple={!isMobile}
-          color="translucent"
-          onClick={() => onClick(index)}
-        // ariaLabel={oldLang('lng_settings_information')} // todo: check
-        >
-          <Icon className="folderIcon" name={icon}/>
-          <span className={buildClassName("folderName", isMobile && "hideText")} >{name}</span>
-        </Button>
-        {badgeCount ? <span className="badge">{badgeCount}</span> : undefined}
-      </div>
-    );
-  }, [isMobile, lang, activeChatFolder]);
+  }, [isChatListContent, isMobile, lang, onReset, shouldSkipTransition]);
 
   return (
     <div ref={folderMenuRef} id="FolderMenu" className="LeftColumn-menu">
@@ -351,12 +334,13 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       <div className="LeftColumn-menu-items">
         {folderTabs?.map((tab, i) => {
           return (
-            <FolderButton
+            <FolderMenuButton
               key={tab.id}
               badgeCount={tab.badgeCount}
+              contextActions={tab.contextActions}
               icon={tab.icon as IconName || 'folder-badge'}
               index={i}
-              isActive={i === activeChatFolder}
+              isActive={i === activeChatFolder && isChatListContent}
               name={tab.title.toString()}
               onClick={handleSwitchTab}
             />);

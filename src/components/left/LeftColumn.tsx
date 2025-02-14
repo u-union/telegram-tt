@@ -550,7 +550,6 @@ function LeftColumn({
     <div className='LeftColumnWrapper'>
       <FoldersMenu
         content={content}
-        isForumPanelOpen={isForumPanelOpen}
         shouldSkipTransition={shouldSkipHistoryAnimations}
         onReset={handleReset}
         onContentChange={setContent}
