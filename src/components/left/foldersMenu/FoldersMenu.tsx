@@ -188,7 +188,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
         id,
         title: title.text,
         icon: folder.emoticon,
-        badgeCount: folderCountersById[id]?.chatsCount,
+        badgeCount: id === ALL_FOLDER_ID ? 0 : folderCountersById[id]?.chatsCount, // do not show badge for All Chats
         isBadgeActive: Boolean(folderCountersById[id]?.notificationsCount),
         isBlocked,
         contextActions: contextActions?.length ? contextActions : undefined,
@@ -269,9 +269,8 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
 
   // Prevent `activeTab` pointing at non-existing folder after update
   useEffect(() => {
-    if (!folderTabs?.length) {
-      return;
-    }
+    if (!folderTabs?.length) return;
+
     if (activeChatFolder >= folderTabs.length) {
       setActiveChatFolder({ activeChatFolder: ALL_FOLDER_ID });
     }
@@ -302,26 +301,29 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
 
   // Buttons for foldersMenu
   const FolderButton: FC<{
+    badgeCount?: number;
     icon: IconName;
     index: number;
+    isActive: boolean;
     name: string;
     onClick: (index: number) => void;
   }> = useMemo(() => {
-    return ({ icon, index, name, onClick }) => (      
+    return ({ badgeCount, icon, index, isActive, name, onClick }) => (      
       <div className="LeftColumn-menu-item" style={`height: ${CHAT_HEIGHT_PX}px`}>
         <Button
+          className={isActive ? 'button-active' : ''}
           ripple={!isMobile}
           color="translucent"
-          // eslint-disable-next-line react/jsx-no-bind
           onClick={() => onClick(index)}
         // ariaLabel={oldLang('lng_settings_information')} // todo: check
         >
           <Icon className="folderIcon" name={icon}/>
           <span className={buildClassName("folderName", isMobile && "hideText")} >{name}</span>
         </Button>
+        {badgeCount ? <span className="badge">{badgeCount}</span> : undefined}
       </div>
     );
-  }, [isMobile, lang]);
+  }, [isMobile, lang, activeChatFolder]);
 
   return (
     <div ref={folderMenuRef} id="FolderMenu" className="LeftColumn-menu">
@@ -351,8 +353,10 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
           return (
             <FolderButton
               key={tab.id}
+              badgeCount={tab.badgeCount}
               icon={tab.icon as IconName || 'folder-badge'}
               index={i}
+              isActive={i === activeChatFolder}
               name={tab.title.toString()}
               onClick={handleSwitchTab}
             />);
