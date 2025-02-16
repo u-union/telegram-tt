@@ -114,7 +114,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
     return {
       id: ALL_FOLDER_ID,
       title: { text: lang('FilterAllChats').length > 9 ? lang('FilterAllChatsShort') : lang('FilterAllChats') },
-      emoticon: ALL_FOLDER_MENU_ICON,
+      emoticon: JSON.stringify({ emoji: ALL_FOLDER_MENU_ICON, isIcon: true }),
       includedChatIds: MEMO_EMPTY_ARRAY,
       excludedChatIds: MEMO_EMPTY_ARRAY,
     } satisfies ApiChatFolder;
@@ -139,6 +139,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       const isBlocked = id !== ALL_FOLDER_ID && i > maxFolders - 1;
       const canShareFolder = selectCanShareFolder(getGlobal(), id);
       const contextActions: MenuItemContextAction[] = [];
+      const { emoji, isIcon } = JSON.parse(folder.emoticon || '{}');
 
       if (canShareFolder) {
         contextActions.push({
@@ -196,7 +197,8 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       return {
         id,
         title: title.text,
-        icon: folder.emoticon,
+        icon: emoji || 'folder-badge',
+        isIcon: !emoji || isIcon,
         badgeCount: folderCountersById[id]?.chatsCount,
         isBadgeActive: Boolean(folderCountersById[id]?.notificationsCount),
         isBlocked,
@@ -338,7 +340,8 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
               key={tab.id}
               badgeCount={tab.badgeCount}
               contextActions={tab.contextActions}
-              icon={tab.icon as IconName || 'folder-badge'}
+              emoji={tab.icon as IconName}
+              isIcon={tab.isIcon}
               index={i}
               isActive={i === activeChatFolder && isChatListContent}
               isBlocked={tab.isBlocked}
@@ -371,23 +374,8 @@ export default memo(withGlobal<OwnProps>(
         orderedIds: orderedFolderIds,
         invites: folderInvitesById,
       },
-      chats: {
-        listIds: {
-          archived,
-        },
-      },
-      stories: {
-        orderedPeerIds: {
-          archived: archivedStories,
-        },
-      },
-      activeSessions: {
-        byHash: sessions,
-      },
-      currentUserId,
-      archiveSettings,
     } = global;
-    const { shouldSkipHistoryAnimations, activeChatFolder } = selectTabState(global);
+    const { activeChatFolder } = selectTabState(global);
 
     return {
       chatFoldersById,

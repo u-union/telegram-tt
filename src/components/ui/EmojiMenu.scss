@@ -1,0 +1,83 @@
+.input-emoji-menu {
+  .menu-container {
+    position: absolute;
+    width: 110%;
+    height: 40vh;
+    left: -1rem !important;
+
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+
+    .input-emoji-menu-content {
+      display: flex;
+      flex-direction: column;
+      padding: 0.5rem;
+      padding-right: 0;
+      gap: 0.2rem;
+
+      >.EmojiList {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+
+        &.no-wrap {
+          flex-wrap: nowrap;
+          width: 100%;
+          overflow-x: scroll;
+          scrollbar-width: thin;
+          scrollbar-gutter: stable;
+          min-height: 3rem;
+
+          &.mobile {
+            padding-bottom: 0.5rem;
+          }
+        }
+
+        >.EmojiButton {
+          min-width: 1.7rem !important;
+          width: 1.7rem;
+          height: 1.7rem;
+          position: relative;
+          margin: 0.3125rem;
+
+          >img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            &.loaded {
+              opacity: 1;
+            }
+          }
+
+          >.emojiIcon {
+            font-size: 1.7rem;
+            color: rgba(var(--color-text-secondary-rgb), 0.8);
+          }
+        }
+      }
+
+      .emoji-list-header {
+        display: flex;
+        color: rgba(var(--color-text-secondary-rgb), 0.75);
+
+        .emoji-list-header-text {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          margin-bottom: 0rem;
+          padding: 0.3rem;
+        }
+      }
+
+      .SearchInput,
+      .SearchInput.has-focus {
+        border: none;
+        background-color: var(--color-chat-hover);
+      }
+    }
+  }
+}
+

@@ -19,6 +19,7 @@ export type TabWithProperties = {
   id?: number;
   title: string;
   icon?: string;
+  isIcon?: boolean;
   badgeCount?: number;
   isBlocked?: boolean;
   isBadgeActive?: boolean;

@@ -156,8 +156,12 @@
         margin-top: var(--button-top-margin);
         height: 100%;
 
-        .folderIcon {
+        .folderIcon, .folderEmoji {
           font-size: var(--folder-icon-size);
+
+          &.folderIcon {
+            opacity: 0.7;
+          }
         }
 
         .folderName {
@@ -167,10 +171,10 @@
           font-weight: 400;
           overflow: hidden;
           width: 100%;
+          opacity: 0.8;
         }
 
         color: var(--color-text-secondary);
-        opacity: 0.7;
 
         &:hover {
           color: var(--color-text);
@@ -178,7 +182,9 @@
 
         &.button-active {
           color: var(--color-primary);
-          opacity: 1;
+          .folderIcon, .folderName {
+            opacity: 1;
+          }
         }
       }
 

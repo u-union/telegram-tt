@@ -210,7 +210,6 @@ const SettingsFoldersMain: FC<OwnProps & StateProps> = ({
 
         {canCreateNewFolder && (
           <Button
-          // TODO: Refactor button component to handle icon placemenet with props
             className="settings-button with-icon mb-2"
             color="primary"
             size="smaller"

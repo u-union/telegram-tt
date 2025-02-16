@@ -1,14 +1,11 @@
-import type { FC } from '../../../../lib/teact/teact';
 import React, {
-  memo, useCallback, useEffect, useMemo, useState,
+  FC, memo, useCallback, useEffect, useMemo, useState,
 } from '../../../../lib/teact/teact';
+
 import { getActions, getGlobal, withGlobal } from '../../../../global';
 
 import type { ApiChatlistExportedInvite } from '../../../../api/types';
-import type {
-  FolderEditDispatch,
-  FoldersState,
-} from '../../../../hooks/reducers/useFoldersReducer';
+import { IconName } from '../../../../types/icons';
 
 import { STICKER_SIZE_FOLDER_SETTINGS } from '../../../../config';
 import { isUserId } from '../../../../global/helpers';
@@ -18,19 +15,26 @@ import { findIntersectionWithSet } from '../../../../util/iteratees';
 import { MEMO_EMPTY_ARRAY } from '../../../../util/memo';
 import { CUSTOM_PEER_EXCLUDED_CHAT_TYPES, CUSTOM_PEER_INCLUDED_CHAT_TYPES } from '../../../../util/objects/customPeer';
 import { LOCAL_TGS_URLS } from '../../../common/helpers/animatedAssets';
+import { EmojiData, EmojiModule, EmojiRawData, uncompressEmoji } from '../../../../util/emoji/emoji';
 
 import { selectChatFilters } from '../../../../hooks/reducers/useFoldersReducer';
 import useHistoryBack from '../../../../hooks/useHistoryBack';
 import useOldLang from '../../../../hooks/useOldLang';
+import useLastCallback from '../../../../hooks/useLastCallback';
+import type { FolderEditDispatch, FoldersState } from '../../../../hooks/reducers/useFoldersReducer';
 
 import AnimatedIcon from '../../../common/AnimatedIcon';
 import GroupChatInfo from '../../../common/GroupChatInfo';
 import Icon from '../../../common/icons/Icon';
 import PrivateChatInfo from '../../../common/PrivateChatInfo';
+
 import FloatingActionButton from '../../../ui/FloatingActionButton';
 import InputText from '../../../ui/InputText';
 import ListItem from '../../../ui/ListItem';
 import Spinner from '../../../ui/Spinner';
+import Button from '../../../ui/Button';
+import EmojiMenu from '../../../ui/EmojiMenu';
+
 
 type OwnProps = {
   state: FoldersState;
@@ -54,11 +58,19 @@ type StateProps = {
   maxInviteLinks: number;
   maxChatLists: number;
   chatListCount: number;
+  recentEmojis: string[];
 };
 
-const SUBMIT_TIMEOUT = 500;
+export type EmojiMenuData = {
+  recent?: string[];
+  icons?: IconName[];
+  categories?: EmojiCategory[];
+  emojis?: Map<string, Emoji>;
+}
 
+const SUBMIT_TIMEOUT = 500;
 const INITIAL_CHATS_LIMIT = 5;
+const AVAILABLE_FOLDER_ICONS: IconName[] = ["chats", "chat", "user-filled", "group-filled", "favorite-filled", "channel-filled", "bot", "folder-badge"];
 
 export const ERROR_NO_TITLE = 'Please provide a title for this folder.';
 export const ERROR_NO_CHATS = 'ChatList.Filter.Error.Empty';
@@ -78,6 +90,7 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
   isOnlyInvites,
   loadedArchivedChatIds,
   invites,
+  recentEmojis,
   maxInviteLinks,
   maxChatLists,
   chatListCount,
@@ -94,6 +107,14 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
 
   const [isIncludedChatsListExpanded, setIsIncludedChatsListExpanded] = useState(false);
   const [isExcludedChatsListExpanded, setIsExcludedChatsListExpanded] = useState(false);
+  const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
+  const [emojiMenuData, setEmojiMenuData] = useState<EmojiMenuData>();
+  const [currentFolderIcon, setCurrentFolderIcon] = useState<{ emoji: string, isIcon: boolean}>({ emoji: 'folder-badge', isIcon: true });
+
+  useEffect(() => {
+    const icon = JSON.parse(state.folder.emoticon || '{}');
+    icon?.emoji ? setCurrentFolderIcon(icon) : undefined;
+  }, []);
 
   useEffect(() => {
     if (isRemoved) {
@@ -279,9 +300,41 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
     );
   }
 
+  const generateAllEmojis = useLastCallback((allEmojis: AllEmojis) => {
+    const emojis: Map<string, Emoji> = new Map();
+    for (const emoji of Object.values(allEmojis)) {
+      if (!emoji) continue;
+      const _emoji: Emoji = 'id' in emoji ? emoji : emoji[1];
+      emojis.set(_emoji.names[0], _emoji);
+    }
+    
+    console.warn('emojis', emojis);
+    return emojis;
+  });
+
+  // Load emojis
+  useEffect(() => {
+    const exec = () => {
+      const recent = recentEmojis;
+      const icons = AVAILABLE_FOLDER_ICONS;
+      const categories = emojiData.categories
+      const emojis = generateAllEmojis(emojiData.emojis);
+
+      setEmojiMenuData({ recent, icons, categories, emojis });
+    };
+
+    if (emojiData) {
+      exec();
+    } else {
+      ensureEmojiData()
+        .then(exec);
+    }
+  }, []);
+
   return (
     <div className="settings-fab-wrapper">
       <div className="settings-content no-border custom-scroll">
+
         <div className="settings-content-header">
           <AnimatedIcon
             size={STICKER_SIZE_FOLDER_SETTINGS}
@@ -295,14 +348,40 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
               {lang('FilterIncludeInfo')}
             </p>
           )}
+          <div className="settings-folders-input">
+            <InputText
+              className="mb-0"
+              label={lang('FilterNameHint')}
+              value={state.folder.title.text}
+              onChange={handleChange}
+              error={state.error && state.error === ERROR_NO_TITLE ? ERROR_NO_TITLE : undefined}
+            />
 
-          <InputText
-            className="mb-0"
-            label={lang('FilterNameHint')}
-            value={state.folder.title.text}
-            onChange={handleChange}
-            error={state.error && state.error === ERROR_NO_TITLE ? ERROR_NO_TITLE : undefined}
-          />
+            <Button
+              type="button"
+              color="translucent"
+              className="input-emoji-button"
+              onClick={() => setIsEmojiMenuOpen(prev => !prev)}
+            >
+              { currentFolderIcon.isIcon ?
+                (<Icon className="folderIcon" name={currentFolderIcon.emoji as IconName} />) :
+                (<span className="folderEmoji">{currentFolderIcon.emoji}</span>)
+              }
+            </Button>
+
+            {isEmojiMenuOpen && emojiMenuData && (
+              <EmojiMenu
+                data={emojiMenuData}
+                isOpen={isEmojiMenuOpen}
+                setIsOpen={setIsEmojiMenuOpen}
+                onSelection={(e, i) => {
+                  const payload = {emoji: e, isIcon: i} as { emoji: string, isIcon: boolean };
+                  dispatch({ type: 'setIcon', payload: payload});
+                  setCurrentFolderIcon(payload);
+                }}
+              />
+            )}
+          </div>
         </div>
 
         {!isOnlyInvites && (
@@ -398,9 +477,11 @@ export default memo(withGlobal<OwnProps>(
   (global, { state }): StateProps => {
     const { listIds } = global.chats;
     const { byId, invites } = global.chatFolders;
+    const { recentEmojis } = global;
     const chatListCount = Object.values(byId).reduce((acc, el) => acc + (el.isChatList ? 1 : 0), 0);
 
     return {
+      recentEmojis,
       loadedActiveChatIds: listIds.active,
       loadedArchivedChatIds: listIds.archived,
       invites: state.folderId ? (invites[state.folderId] || MEMO_EMPTY_ARRAY) : undefined,
@@ -411,3 +492,17 @@ export default memo(withGlobal<OwnProps>(
     };
   },
 )(SettingsFoldersEdit));
+
+let emojiDataPromise: Promise<EmojiModule>;
+let emojiRawData: EmojiRawData;
+let emojiData: EmojiData;
+
+async function ensureEmojiData() {
+  if (!emojiDataPromise) {
+    emojiDataPromise = import('emoji-data-ios/emoji-data.json');
+    emojiRawData = (await emojiDataPromise).default;
+    emojiData = uncompressEmoji(emojiRawData);
+  }
+
+  return emojiDataPromise;
+}

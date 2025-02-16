@@ -1,28 +1,33 @@
-import { CHAT_HEIGHT_PX } from "../../../config";
+import React, { FC, memo, useRef } from "../../../lib/teact/teact";
+
 import useAppLayout from "../../../hooks/useAppLayout";
 import useContextMenuHandlers from "../../../hooks/useContextMenuHandlers";
 import useLastCallback from "../../../hooks/useLastCallback";
-import React, { FC, memo, useRef } from "../../../lib/teact/teact";
+
+import { CHAT_HEIGHT_PX } from "../../../config";
+import Icon from "../../common/icons/Icon";
 import { IconName } from "../../../types/icons";
+
 import buildClassName from "../../../util/buildClassName";
 import { MouseButton } from "../../../util/windowEnvironment";
-import Icon from "../../common/icons/Icon";
+
 import Button from "../../ui/Button";
-import { MenuItemContextAction } from "../../ui/ListItem";
 import Menu from "../../ui/Menu";
 import MenuItem from "../../ui/MenuItem";
 import MenuSeparator from "../../ui/MenuSeparator";
+import { MenuItemContextAction } from "../../ui/ListItem";
 
 const FolderMenuButton: FC<{
   badgeCount?: number;
   contextActions?: MenuItemContextAction[];
-  icon: IconName;
+  emoji: IconName;
+  isIcon?: boolean;
   index: number;
   isActive: boolean;
   isBlocked?: boolean;
   name: string;
   onClick: (index: number) => void;
-}> = ({ badgeCount, contextActions, icon, index, isActive, isBlocked, name, onClick }) => {
+}> = ({ badgeCount, contextActions, emoji, isIcon, index, isActive, isBlocked, name, onClick }) => {
   const { isMobile } = useAppLayout();
   const buttonRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -53,7 +58,7 @@ const FolderMenuButton: FC<{
         onClick={() => onClick(index)}
       // ariaLabel={oldLang('lng_settings_information')} // todo: check
       >
-        <Icon className="folderIcon" name={icon} />
+        { isIcon ? (<Icon className="folderIcon" name={emoji} />) : (<span className="folderEmoji">{emoji}</span>) }
         <span className={buildClassName("folderName", isMobile && "hideText")} >{name}</span>
       </Button>
 
@@ -72,7 +77,7 @@ const FolderMenuButton: FC<{
           getTriggerElement={useLastCallback(() => buttonRef.current)}
           getMenuElement={useLastCallback(() => menuRef.current)}
           getRootElement={useLastCallback(() => buttonRef.current)}
-          getLayout={useLastCallback(() => ({ withPortal: true, positionX: 'left', positionY: 'bottom' }))}
+          getLayout={useLastCallback(() => ({ withPortal: true, extraMarginTop: -100 }))}
           >
           {contextActions.map((action) => (
             ('isSeparator' in action) ? (
