@@ -1,5 +1,6 @@
 import type { FC } from '../../../../lib/teact/teact';
-import React, { memo, useCallback } from '../../../../lib/teact/teact';
+import React, { memo } from '../../../../lib/teact/teact';
+import useLastCallback from '../../../../hooks/useLastCallback';
 import { getActions } from '../../../../global';
 
 import type { ApiChatFolder } from '../../../../api/types';
@@ -42,7 +43,7 @@ const SettingsFolders: FC<OwnProps> = ({
     addChatFolder,
   } = getActions();
 
-  const handleReset = useCallback(() => {
+  const handleReset = useLastCallback(() => {
     if (
       currentScreen === SettingsScreens.FoldersCreateFolder
       || currentScreen === SettingsScreens.FoldersEditFolder
@@ -67,14 +68,11 @@ const SettingsFolders: FC<OwnProps> = ({
     }
 
     onReset();
-  }, [
-    state.mode, dispatch,
-    currentScreen, onReset, onScreenSelect,
-  ]);
+  });
 
   const isCreating = state.mode === 'create';
 
-  const saveState = useCallback((newState: FoldersState) => {
+  const saveState = useLastCallback((newState: FoldersState) => {
     const { title } = newState.folder;
 
     if (!title) {
@@ -102,55 +100,55 @@ const SettingsFolders: FC<OwnProps> = ({
     dispatch({ type: 'setIsTouched', payload: false });
 
     return true;
-  }, [dispatch, isCreating]);
+  });
 
-  const handleSaveFolder = useCallback((cb?: NoneToVoidFunction) => {
+  const handleSaveFolder = useLastCallback((cb?: NoneToVoidFunction) => {
     if (!saveState(state)) {
       return;
     }
     cb?.();
-  }, [saveState, state]);
+  });
 
-  const handleSaveFilter = useCallback(() => {
+  const handleSaveFilter = useLastCallback(() => {
     const newState = dispatch({ type: 'saveFilters' });
     handleReset();
     saveState(newState);
-  }, [dispatch, handleReset, saveState]);
+  });
 
-  const handleCreateFolder = useCallback(() => {
+  const handleCreateFolder = useLastCallback(() => {
     dispatch({ type: 'reset' });
     onScreenSelect(SettingsScreens.FoldersCreateFolder);
-  }, [onScreenSelect, dispatch]);
+  });
 
-  const handleEditFolder = useCallback((folder: ApiChatFolder) => {
+  const handleEditFolder = useLastCallback((folder: ApiChatFolder) => {
     dispatch({ type: 'editFolder', payload: folder });
     onScreenSelect(SettingsScreens.FoldersEditFolder);
-  }, [dispatch, onScreenSelect]);
+  });
 
-  const handleAddIncludedChats = useCallback(() => {
+  const handleAddIncludedChats = useLastCallback(() => {
     dispatch({ type: 'editIncludeFilters' });
     onScreenSelect(currentScreen === SettingsScreens.FoldersEditFolderFromChatList
       ? SettingsScreens.FoldersIncludedChatsFromChatList
       : SettingsScreens.FoldersIncludedChats);
-  }, [currentScreen, dispatch, onScreenSelect]);
+  });
 
-  const handleAddExcludedChats = useCallback(() => {
+  const handleAddExcludedChats = useLastCallback(() => {
     dispatch({ type: 'editExcludeFilters' });
     onScreenSelect(currentScreen === SettingsScreens.FoldersEditFolderFromChatList
       ? SettingsScreens.FoldersExcludedChatsFromChatList
       : SettingsScreens.FoldersExcludedChats);
-  }, [currentScreen, dispatch, onScreenSelect]);
+  });
 
-  const handleShareFolder = useCallback(() => {
+  const handleShareFolder = useLastCallback(() => {
     openShareChatFolderModal({ folderId: state.folderId!, noRequestNextScreen: true });
     dispatch({ type: 'setIsChatlist', payload: true });
     onScreenSelect(SettingsScreens.FoldersShare);
-  }, [dispatch, onScreenSelect, state.folderId]);
+  });
 
-  const handleOpenInvite = useCallback((url: string) => {
+  const handleOpenInvite = useLastCallback((url: string) => {
     openShareChatFolderModal({ folderId: state.folderId!, url, noRequestNextScreen: true });
     onScreenSelect(SettingsScreens.FoldersShare);
-  }, [onScreenSelect, state.folderId]);
+  });
 
   switch (currentScreen) {
     case SettingsScreens.Folders:
