@@ -34,6 +34,7 @@ import './FoldersMenu.scss';
 const SAVED_MESSAGES_HOTKEY = '0';
 
 type OwnProps = {
+  isOpen?: boolean;
   content: LeftColumnContent;
   isForumPanelOpen?: boolean;
   shouldSkipTransition?: boolean;
@@ -53,6 +54,7 @@ type StateProps = {
 };
 
 const FoldersMenu: FC<OwnProps & StateProps> = ({
+  isOpen,
   activeChatFolder,
   content,
   chatFoldersById,
@@ -311,7 +313,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
   }, [isChatListContent, isMobile, lang, onReset, shouldSkipTransition]);
 
   return (
-    <div ref={folderMenuRef} id="FolderMenu" className="LeftColumn-menu">
+    <div ref={folderMenuRef} id="FolderMenu" className={buildClassName('LeftColumn-menu', isOpen && 'open')}>
       <div className="LeftColumn-menu-header">
         {/* {oldLang.isRtl && <div className="DropdownMenuFiller" />} */} {/* check */}
         <DropdownMenu

@@ -20,12 +20,16 @@ import MenuItem from '../../ui/MenuItem';
 type OwnProps = {
   currentScreen: SettingsScreens;
   editedFolderId?: number;
+  isReturnButtonHide?: boolean;
+  onReset: NoneToVoidFunction;
   onScreenSelect: (screen: SettingsScreens) => void;
 };
 
 const SettingsHeader: FC<OwnProps> = ({
   currentScreen,
   editedFolderId,
+  isReturnButtonHide,
+  onReset,
   onScreenSelect,
 }) => {
   const {
@@ -246,7 +250,7 @@ const SettingsHeader: FC<OwnProps> = ({
           <h3>
             {oldLang(
               currentScreen === SettingsScreens.FoldersIncludedChats
-                  || currentScreen === SettingsScreens.FoldersIncludedChatsFromChatList
+                || currentScreen === SettingsScreens.FoldersIncludedChatsFromChatList
                 ? 'FilterInclude' : 'FilterExclude',
             )}
           </h3>
@@ -284,6 +288,16 @@ const SettingsHeader: FC<OwnProps> = ({
 
   return (
     <div className="left-header">
+      <Button
+        round
+        size="smaller"
+        color="translucent"
+        onClick={onReset}
+        ariaLabel={oldLang('AccDescrGoBack')}
+        className={isReturnButtonHide ? 'hidden' : ''}
+      >
+        <Icon name="arrow-left" />
+      </Button>
       {renderHeaderContent()}
       <ConfirmDialog
         isOpen={isSignOutDialogOpen}

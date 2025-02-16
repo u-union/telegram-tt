@@ -25,6 +25,7 @@ import Spinner from '../../ui/Spinner';
 export type OwnProps = {
   isChannel?: boolean;
   isActive: boolean;
+  isReturnButtonHide?: boolean;
   memberIds: string[];
   onReset: (forceReturnToChatList?: boolean) => void;
 };
@@ -37,9 +38,10 @@ type StateProps = {
 
 const MAX_MEMBERS_FOR_GENERATE_CHAT_NAME = 4;
 
-const NewChatStep2: FC<OwnProps & StateProps > = ({
+const NewChatStep2: FC<OwnProps & StateProps> = ({
   isChannel,
   isActive,
+  isReturnButtonHide,
   memberIds,
   maxGroupSize,
   creationProgress,
@@ -150,6 +152,17 @@ const NewChatStep2: FC<OwnProps & StateProps > = ({
   return (
     <div className="NewChat">
       <div className="left-header">
+        <Button
+          round
+          size="smaller"
+          color="translucent"
+          // eslint-disable-next-line react/jsx-no-bind
+          onClick={() => onReset()}
+          ariaLabel="Return to member selection"
+          className={isReturnButtonHide ? 'hidden' : ''}
+        >
+          <Icon name="arrow-left" />
+        </Button>
         <h3>{lang(isChannel ? 'NewChannel' : 'NewGroup')}</h3>
       </div>
       <div className="NewChat-inner step-2">

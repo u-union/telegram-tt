@@ -142,6 +142,7 @@ const PRIVACY_GROUP_CHATS_SCREENS = [
 
 export type OwnProps = {
   isActive: boolean;
+  isReturnButtonHide?: boolean;
   currentScreen: SettingsScreens;
   foldersState: FoldersState;
   foldersDispatch: FolderEditDispatch;
@@ -152,6 +153,7 @@ export type OwnProps = {
 
 const Settings: FC<OwnProps> = ({
   isActive,
+  isReturnButtonHide,
   currentScreen,
   foldersState,
   foldersDispatch,
@@ -497,6 +499,8 @@ const Settings: FC<OwnProps> = ({
           currentScreen={currentScreen}
           onScreenSelect={onScreenSelect}
           editedFolderId={foldersState.folderId}
+          isReturnButtonHide={isReturnButtonHide}
+          onReset={handleReset}
         />
         {renderCurrentSectionContent(isScreenActive, activeKey)}
       </>

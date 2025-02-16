@@ -3,6 +3,12 @@
   overflow: hidden;
   position: relative;
 
+  .left-header {
+    .Button.hidden {
+      display: none;
+    }
+  }
+
   &-inner {
     height: calc(100% - var(--header-height));
     overflow: hidden;

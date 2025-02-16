@@ -53,6 +53,7 @@ type StateProps = {
   isClosingSearch?: boolean;
   archiveSettings: GlobalState['archiveSettings'];
   isArchivedStoryRibbonShown?: boolean;
+  showChatFoldersMenu?: boolean;
 };
 
 enum ContentType {
@@ -87,6 +88,7 @@ function LeftColumn({
   isClosingSearch,
   archiveSettings,
   isArchivedStoryRibbonShown,
+  showChatFoldersMenu,
 }: OwnProps & StateProps) {
   const {
     setGlobalSearchQuery,
@@ -488,12 +490,14 @@ function LeftColumn({
             isForumPanelOpen={isForumPanelOpen}
             archiveSettings={archiveSettings}
             isStoryRibbonShown={isArchivedStoryRibbonShown}
+            isReturnButtonHide={showChatFoldersMenu}
           />
         );
       case ContentType.Settings:
         return (
           <Settings
             isActive={isActive}
+            isReturnButtonHide={showChatFoldersMenu}
             currentScreen={settingsScreen}
             foldersState={foldersState}
             foldersDispatch={foldersDispatch}
@@ -511,6 +515,7 @@ function LeftColumn({
             content={content}
             onContentChange={setContent}
             onReset={handleReset}
+            isReturnButtonHide={showChatFoldersMenu}
           />
         );
       case ContentType.NewGroup:
@@ -521,6 +526,7 @@ function LeftColumn({
             content={content}
             onContentChange={setContent}
             onReset={handleReset}
+            isReturnButtonHide={showChatFoldersMenu}
           />
         );
       default:
@@ -540,6 +546,7 @@ function LeftColumn({
             isAppUpdateAvailable={isAppUpdateAvailable}
             isElectronUpdateAvailable={isElectronUpdateAvailable}
             isForumPanelOpen={isForumPanelOpen}
+            isMainButtonHide={showChatFoldersMenu}
             onTopicSearch={handleTopicSearch}
           />
         );
@@ -549,6 +556,7 @@ function LeftColumn({
   return (
     <div className='LeftColumnWrapper'>
       <FoldersMenu
+        isOpen={showChatFoldersMenu}
         content={content}
         shouldSkipTransition={shouldSkipHistoryAnimations}
         onReset={handleReset}
@@ -589,6 +597,9 @@ export default memo(withGlobal<OwnProps>(
       },
     } = tabState;
     const {
+      chatFolders: {
+        byId: chatFoldersById,
+      },
       currentUserId,
       passcode: {
         hasPasscode,
@@ -602,6 +613,7 @@ export default memo(withGlobal<OwnProps>(
     const isChatOpen = Boolean(currentChat?.id);
     const isForumPanelOpen = selectIsForumPanelOpen(global);
     const forumPanelChatId = tabState.forumPanelChatId;
+    const showChatFoldersMenu = chatFoldersById && Object.keys(chatFoldersById).length > 0;
 
     return {
       searchQuery: query,
@@ -620,6 +632,7 @@ export default memo(withGlobal<OwnProps>(
       isClosingSearch: tabState.globalSearch.isClosing,
       archiveSettings,
       isArchivedStoryRibbonShown: isArchivedRibbonShown,
+      showChatFoldersMenu
     };
   },
 )(LeftColumn));

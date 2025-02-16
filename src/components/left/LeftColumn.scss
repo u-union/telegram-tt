@@ -29,14 +29,6 @@
 
   .SearchInput {
     margin-left: 0 0.2rem;
-
-    @media (max-width: 600px) {
-      max-width: calc(100% - 3rem);
-    }
-  }
-
-  @media (max-width: 600px) {
-    padding: 0.5rem;
   }
 
   .Button.smaller {

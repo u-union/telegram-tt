@@ -2,6 +2,7 @@ import type { FC } from '../../../lib/teact/teact';
 import React, {
   memo, useEffect, useRef, useState,
 } from '../../../lib/teact/teact';
+import { getActions } from '../../../global';
 
 import type { FolderEditDispatch } from '../../../hooks/reducers/useFoldersReducer';
 import type { SettingsScreens } from '../../../types';
@@ -38,6 +39,7 @@ type OwnProps = {
   isElectronUpdateAvailable?: boolean;
   isForumPanelOpen?: boolean;
   isClosingSearch?: boolean;
+  isMainButtonHide?: boolean;
   onSearchQuery: (query: string) => void;
   onContentChange: (content: LeftColumnContent) => void;
   onSettingsScreenSelect: (screen: SettingsScreens) => void;
@@ -61,12 +63,14 @@ const LeftMain: FC<OwnProps> = ({
   isAppUpdateAvailable,
   isElectronUpdateAvailable,
   isForumPanelOpen,
+  isMainButtonHide,
   onSearchQuery,
   onContentChange,
   onSettingsScreenSelect,
   onReset,
   onTopicSearch,
 }) => {
+  const { closeForumPanel } = getActions();
   const [isNewChatButtonShown, setIsNewChatButtonShown] = useState(IS_TOUCH_ENV);
   const [isElectronAutoUpdateEnabled, setIsElectronAutoUpdateEnabled] = useState(false);
 
@@ -112,8 +116,17 @@ const LeftMain: FC<OwnProps> = ({
     }, BUTTON_CLOSE_DELAY_MS);
   });
 
+  const handleSelectSettings = useLastCallback(() => {
+    onContentChange(LeftColumnContent.Settings);
+  });
+
   const handleSelectContacts = useLastCallback(() => {
     onContentChange(LeftColumnContent.Contacts);
+  });
+
+  const handleSelectArchived = useLastCallback(() => {
+    onContentChange(LeftColumnContent.Archived);
+    closeForumPanel();
   });
 
   const handleUpdateClick = useLastCallback(() => {
@@ -163,9 +176,13 @@ const LeftMain: FC<OwnProps> = ({
         content={content}
         contactsFilter={contactsFilter}
         onSearchQuery={onSearchQuery}
+        onSelectSettings={handleSelectSettings}
+        onSelectContacts={handleSelectContacts}
+        onSelectArchived={handleSelectArchived}
         onReset={onReset}
         shouldSkipTransition={shouldSkipTransition}
         isClosingSearch={isClosingSearch}
+        isMainButtonHide={isMainButtonHide}
       />
       <Transition
         name={shouldSkipTransition ? 'none' : 'zoomFade'}
