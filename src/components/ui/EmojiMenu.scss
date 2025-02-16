@@ -8,6 +8,13 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-gutter: stable;
+    
+    ::-webkit-scrollbar {
+      height: 0.3rem;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(var(--color-text-secondary-rgb), 0.5)
+    }
 
     .input-emoji-menu-content {
       display: flex;
