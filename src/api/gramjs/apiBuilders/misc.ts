@@ -31,11 +31,10 @@ import { buildApiUser } from './users';
 
 export function buildApiWallpaper(wallpaper: GramJs.TypeWallPaper): ApiWallpaper | undefined {
   if (wallpaper instanceof GramJs.WallPaperNoFile) {
-    // TODO: Plain color wallpapers
     return undefined;
   }
 
-  const { slug } = wallpaper;
+  const { slug, pattern, settings, dark } = wallpaper;
 
   const document = buildApiDocument(wallpaper.document);
 
@@ -46,6 +45,9 @@ export function buildApiWallpaper(wallpaper: GramJs.TypeWallPaper): ApiWallpaper
   return {
     slug,
     document,
+    pattern,
+    settings,
+    dark
   };
 }
 

@@ -22,6 +22,7 @@ import Checkbox from '../../ui/Checkbox';
 import ListItem from '../../ui/ListItem';
 import Loading from '../../ui/Loading';
 import WallpaperTile from './WallpaperTile';
+import { getColorsFromWallPaper } from '../../ui/WallpaperPatternRenderer';
 
 import './SettingsGeneralBackground.scss';
 
@@ -153,15 +154,20 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
 
       {loadedWallpapers ? (
         <div className="settings-wallpapers">
-          {loadedWallpapers.map((wallpaper) => (
-            <WallpaperTile
-              key={wallpaper.slug}
-              wallpaper={wallpaper}
-              theme={theme}
-              isSelected={background === wallpaper.slug}
-              onClick={handleWallPaperSelect}
-            />
-          ))}
+          {loadedWallpapers
+            .map((wallpaper) => {
+            const colors = getColorsFromWallPaper(wallpaper);
+            if (wallpaper.pattern && !colors) return undefined;
+            return (
+              <WallpaperTile
+                key={wallpaper.slug}
+                wallpaper={wallpaper}
+                theme={theme}
+                isSelected={background === wallpaper.slug}
+                onClick={handleWallPaperSelect}
+              />
+            );
+          })}
         </div>
       ) : (
         <Loading />
