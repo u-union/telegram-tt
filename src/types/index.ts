@@ -73,7 +73,11 @@ export interface IThemeSettings {
   background?: string;
   backgroundColor?: string;
   patternColor?: string;
-  isBlurred?: boolean;
+  blurSize?: number;
+  isPattern?: boolean;
+  colors?: string;
+  isDark?: boolean;
+  scale?: number;
 }
 
 export type NotifySettings = {

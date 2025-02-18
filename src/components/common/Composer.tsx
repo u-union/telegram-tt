@@ -169,6 +169,7 @@ import MessageEffect from '../middle/message/MessageEffect';
 import ReactionSelector from '../middle/message/reactions/ReactionSelector';
 import Button from '../ui/Button';
 import ResponsiveHoverButton from '../ui/ResponsiveHoverButton';
+import { emitPatternTransition } from '../ui/WallpaperPatternRenderer';
 import Spinner from '../ui/Spinner';
 import Avatar from './Avatar';
 import Icon from './icons/Icon';
@@ -977,6 +978,9 @@ const Composer: FC<OwnProps & StateProps> = ({
 
     clearDraft({ chatId, isLocalOnly: true });
 
+    // Emit pattern transition for wallpaper
+    emitPatternTransition({ isWallPaper: true })
+
     // Wait until message animation starts
     requestMeasure(() => {
       resetComposer();
@@ -1090,6 +1094,9 @@ const Composer: FC<OwnProps & StateProps> = ({
     if (IS_IOS && messageInput && messageInput === document.activeElement) {
       applyIosAutoCapitalizationFix(messageInput);
     }
+
+    // Emit pattern transition for wallpaper
+    emitPatternTransition({ isWallPaper: true })
 
     // Wait until message animation starts
     requestMeasure(() => {

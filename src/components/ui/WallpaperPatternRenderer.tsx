@@ -4,7 +4,8 @@ import { hexToRgb } from "../../util/switchTheme";
 import useLastCallback from "../../hooks/useLastCallback";
 
 type OwnProps = {
-  wallPaper: ApiWallpaper;
+  slug: string;
+  colors: string;
   isBackground?: boolean;
 };
 
@@ -34,7 +35,7 @@ const CURVES = [
 ]
 const INCREMENTAL_CURVE = CURVES.map((v, i, arr) => v - (arr[i - 1] ?? 0));
 
-const WallpaperPatternRenderer: FC<OwnProps> = ({ wallPaper, isBackground }) => {
+const WallpaperPatternRenderer: FC<OwnProps> = ({ slug, colors, isBackground }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef({
     phase: 0,
@@ -57,7 +58,6 @@ const WallpaperPatternRenderer: FC<OwnProps> = ({ wallPaper, isBackground }) => 
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const colors = getColorsFromWallPaper(wallPaper);
     canvas.dataset.colors = colors;
 
     const helperCanvas = new OffscreenCanvas(WIDTH, HEIGHT);
@@ -85,7 +85,7 @@ const WallpaperPatternRenderer: FC<OwnProps> = ({ wallPaper, isBackground }) => 
     }
 
     drawGradient();
-  }, [wallPaper]);
+  }, [slug, colors]);
 
   const drawGradient = useLastCallback(() => {
     const { colors, phase, tail, tails, ctx, helperCtx, helperCanvas } = stateRef.current;
@@ -167,21 +167,6 @@ const WallpaperPatternRenderer: FC<OwnProps> = ({ wallPaper, isBackground }) => 
       result.push(positions[i]);
     }
     return result;
-  });
-
-  const getNextPositions = useLastCallback((phase: number, tails: number, curve: number[]): Point[][] => {
-    const base = getPositions(phase);
-    const next = getPositions((phase + 1) % PHASES);
-    const distances = next.map((np, idx) => ({
-      x: (np.x - base[idx].x) / tails,
-      y: (np.y - base[idx].y) / tails,
-    }));
-    return curve.map(value =>
-      distances.map((d, idx) => ({
-        x: base[idx].x + d.x * value,
-        y: base[idx].y + d.y * value,
-      }))
-    );
   });
 
   const changeTailAndDraw = useLastCallback((diff: number) => {
@@ -279,7 +264,7 @@ const WallpaperPatternRenderer: FC<OwnProps> = ({ wallPaper, isBackground }) => 
     const handleTransition = (e: Event) => {
       const customEvent = e as CustomEvent<PatternTransition>;
       if (isBackground !== customEvent.detail.isWallPaper) return;
-      if (!isBackground && customEvent.detail.wallpaperSlug !== wallPaper.slug) return;
+      if (!isBackground && customEvent.detail.wallpaperSlug !== slug) return;
       toNextPosition();
     };
 
@@ -321,12 +306,87 @@ function easeOutQuadApply(v: number, c: number) {
 
 export const PATTERN_TRANSITION_EVENT = 'pattern_transition';
 type PatternTransition = {
-  wallpaperSlug: string;
+  wallpaperSlug?: string;
   isWallPaper?: boolean;
 }
 export type PatternTransitionEvent = CustomEvent<PatternTransition>;
 
-export function emitPatternTransition(e: PatternTransition) {
+export const emitPatternTransition = (e: PatternTransition) => {
   const event = new CustomEvent(PATTERN_TRANSITION_EVENT, { detail: e });
   document.dispatchEvent(event);
 }
+
+export const renderPatternToCanvas = async (
+  url: string,
+  width: number, 
+  height: number,
+  options?: {
+    scale?: number,
+    devicePixelRatio?: number
+    isMask?: boolean
+  }
+): Promise<HTMLCanvasElement> => {
+  const canvas = document.createElement('canvas');
+  const dpr = options?.devicePixelRatio || Math.min(2, window.devicePixelRatio);
+  
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  const ctx = canvas.getContext('2d')!;
+  
+  const img = document.createElement('img');
+  img.crossOrigin = 'anonymous';
+
+  await new Promise((resolve, reject) => {
+    img.complete ? resolve(img) : img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+
+  const scale = options?.scale || 1;
+  const patternHeight = (500 + (height / 2.5)) * dpr * scale;
+  const ratio = patternHeight / img.height;
+  const imageWidth = img.width * ratio;
+  const imageHeight = patternHeight;
+
+  const centerY = (canvas.height - imageHeight) / 2;
+
+  const drawHorizontalLine = (y: number) => {
+    for(let x = 0; x < canvas.width; x += imageWidth) {
+      ctx.drawImage(img, x, y, imageWidth, imageHeight);
+    }
+  };
+
+  drawHorizontalLine(centerY);
+
+  if(centerY > 0) {
+    let topY = centerY;
+    do {
+      drawHorizontalLine(topY -= imageHeight);
+    } while(topY >= 0);
+  }
+
+  const endY = canvas.height - 1;
+  for(let bottomY = centerY + imageHeight; bottomY < endY; bottomY += imageHeight) {
+    drawHorizontalLine(bottomY);
+  }
+  // Invert colors if mask mode is enabled
+  if (options?.isMask) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data32 = new Uint32Array(imageData.data.buffer);
+    
+    // Process 4 bytes (RGBA) at once using Uint32Array
+    for (let i = 0; i < data32.length; i++) {
+      // Extract alpha and invert it while preserving RGB
+      const pixel = data32[i];
+      const alpha = 255 - (pixel >>> 24);
+      data32[i] = (pixel & 0x00FFFFFF) | (alpha << 24);
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  return canvas;
+};

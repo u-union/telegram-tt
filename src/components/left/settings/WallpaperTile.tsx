@@ -11,7 +11,7 @@ import { UPLOADING_WALLPAPER_SLUG } from '../../../types';
 import { CUSTOM_BG_CACHE_NAME } from '../../../config';
 import buildClassName from '../../../util/buildClassName';
 import * as cacheApi from '../../../util/cacheApi';
-import { fetchBlob } from '../../../util/files';
+import { fetchBlob, uncompressTGV } from '../../../util/files';
 
 import useAppLayout from '../../../hooks/useAppLayout';
 import useCanvasBlur from '../../../hooks/useCanvasBlur';
@@ -22,7 +22,7 @@ import useShowTransitionDeprecated from '../../../hooks/useShowTransitionDepreca
 
 import Icon from '../../common/icons/Icon';
 import ProgressSpinner from '../../ui/ProgressSpinner';
-import WallpaperPatternRenderer, { emitPatternTransition } from '../../ui/WallpaperPatternRenderer';
+import WallpaperPatternRenderer, { emitPatternTransition, getColorsFromWallPaper } from '../../ui/WallpaperPatternRenderer';
 
 import './WallpaperTile.scss';
 
@@ -71,7 +71,11 @@ const WallpaperTile: FC<OwnProps> = ({
   const handleSelect = useCallback(() => {
     (async () => {
       const blob = await fetchBlob(fullMedia!);
-      await cacheApi.save(CUSTOM_BG_CACHE_NAME, cacheKeyRef.current!, blob);
+      await cacheApi.save(
+        CUSTOM_BG_CACHE_NAME,
+        cacheKeyRef.current!,
+        wallpaper.pattern ? await uncompressTGV(blob) : blob
+      );
       onClick(slug);
     })();
   }, [fullMedia, onClick, slug]);
@@ -101,7 +105,7 @@ const WallpaperTile: FC<OwnProps> = ({
   return (
     <div className={className} onClick={handleClick}>
       <div className="media-inner">
-        {wallpaper.pattern && (<WallpaperPatternRenderer wallPaper={wallpaper} />)}
+        {wallpaper.pattern && (<WallpaperPatternRenderer slug={wallpaper.slug} colors={getColorsFromWallPaper(wallpaper)} />)}
         <canvas
           ref={thumbRef}
           className="thumbnail"

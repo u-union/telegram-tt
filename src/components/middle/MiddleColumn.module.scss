@@ -45,10 +45,6 @@
     -webkit-app-region: drag;
   }
 
-  &.customBgImage.blurred::before {
-    filter: blur(12px);
-  }
-
   @media screen and (min-width: 1276px) {
     :global(body:not(.no-page-transitions)) &:not(.customBgImage)::before {
       overflow: hidden;

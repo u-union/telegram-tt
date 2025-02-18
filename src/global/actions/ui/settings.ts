@@ -144,6 +144,29 @@ addActionHandler('updatePerformanceSettings', (global, actions, payload): Action
 addActionHandler('setThemeSettings', (global, actions, payload): ActionReturnType => {
   const { theme, ...settings } = payload;
 
+  /**
+   * Reset derived settings
+   */
+  const currentSettings = global.settings.byKey[theme];
+
+  if ('background' in settings && settings.background === undefined) {
+    settings.isPattern = false;
+    settings.colors = undefined;
+    settings.isDark = false;
+    settings.scale = 1;
+    settings.blurSize = 0;
+  }
+
+  if ('isPattern' in settings) {
+    if (settings.isPattern) {
+      settings.blurSize = 0;
+    } else {
+      settings.scale = 1;
+      settings.colors = undefined;
+      settings.isDark = false;
+    }
+  }
+
   return replaceThemeSettings(global, theme, settings);
 });
 
