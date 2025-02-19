@@ -9,7 +9,7 @@ import { preloadImage } from '../util/files';
 import { debounce } from '../util/schedulers';
 import { renderPatternToCanvas } from '../components/ui/WallpaperPatternRenderer';
 
-const WALLPAPER_CHANGE_DELAY = 500;
+const WALLPAPER_CHANGE_DELAY = 200;
 
 const useCustomBackground = (theme: ThemeKey, settingValue?: string, isPattern?: boolean, isDark?: boolean, scale?: number) => {
   const { setThemeSettings } = getActions();
