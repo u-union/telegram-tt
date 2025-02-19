@@ -525,7 +525,7 @@ function MiddleColumn({
         className={bgClassName}
         style={customBackgroundValue ? `--custom-background: ${customBackgroundValue};` : undefined}
       />
-      {customBackground && !customBackgroundValue && <Loading color="white" className="bg_spinner" />}
+      {customBackground && !customBackgroundValue?.startsWith('url') && <Loading color="white" className="bg_spinner" />}
 
       <div id="middle-column-portals" />
       {Boolean(renderingChatId && renderingThreadId) && (

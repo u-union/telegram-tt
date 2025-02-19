@@ -144,6 +144,7 @@ import {
   selectViewportIds,
 } from '../../selectors';
 import { deleteMessages } from '../apiUpdaters/messages';
+import { emitPatternTransition } from '../../../components/ui/WallpaperPatternRenderer';
 
 const AUTOLOGIN_TOKEN_KEY = 'autologin_token';
 
@@ -522,6 +523,9 @@ addActionHandler('editMessage', (global, actions, payload): ActionReturnType => 
 
       uploadProgressCallbacks.delete(currentMessageKey);
     }
+
+    // Emit pattern transition for wallpaper
+    emitPatternTransition({ isWallPaper: true });
   })();
 });
 
@@ -1201,6 +1205,9 @@ addActionHandler('forwardMessages', (global, actions, payload): ActionReturnType
     isShareMessageModalShown: false,
   }, tabId);
   setGlobal(global);
+
+  // Emit pattern transition for wallpaper
+  emitPatternTransition({ isWallPaper: true })
 });
 
 addActionHandler('loadScheduledHistory', async (global, actions, payload): Promise<void> => {
@@ -1560,6 +1567,9 @@ async function sendMessage<T extends GlobalState>(global: T, params: {
 
     uploadProgressCallbacks.delete(currentMessageKey);
   }
+
+  // Emit pattern transition for wallpaper
+  emitPatternTransition({ isWallPaper: true })
 }
 
 addActionHandler('loadPinnedMessages', async (global, actions, payload): Promise<void> => {

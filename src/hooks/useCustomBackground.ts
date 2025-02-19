@@ -9,6 +9,8 @@ import { preloadImage } from '../util/files';
 import { debounce } from '../util/schedulers';
 import { renderPatternToCanvas } from '../components/ui/WallpaperPatternRenderer';
 
+const WALLPAPER_CHANGE_DELAY = 500;
+
 const useCustomBackground = (theme: ThemeKey, settingValue?: string, isPattern?: boolean, isDark?: boolean, scale?: number) => {
   const { setThemeSettings } = getActions();
   const [value, setValue] = useState(settingValue);
@@ -24,12 +26,11 @@ const useCustomBackground = (theme: ThemeKey, settingValue?: string, isPattern?:
       });
     }
 
-    if (settingValue?.startsWith('#')) {
-      setValue(settingValue);
-    } else {
-      setValue(undefined);
+    setValue(settingValue);
+    if (!settingValue?.startsWith('#')) {
       cacheApi.fetch(CUSTOM_BG_CACHE_NAME, theme, cacheApi.Type.Blob)
         .then(async (blob) => {
+          let url;
           if (isPattern) {
             blobRef.current = blob;
             const patternUrl = URL.createObjectURL(blob);
@@ -39,13 +40,12 @@ const useCustomBackground = (theme: ThemeKey, settingValue?: string, isPattern?:
               window.innerHeight,
               { scale: scale, isMask: isDark }
             );
-            const dataUrl = canvas.toDataURL();
-            setValue(`url(${dataUrl})`);
+            url = canvas.toDataURL();
           } else {
-            const url = URL.createObjectURL(blob);
+            url = URL.createObjectURL(blob);
             await preloadImage(url)
-            setValue(`url(${url})`);
           }
+          setTimeout(() => { setValue(`url(${url})`); }, WALLPAPER_CHANGE_DELAY); // Delay to avoid flickering
         })
         .catch(() => {
           setThemeSettings({
@@ -65,7 +65,6 @@ const useCustomBackground = (theme: ThemeKey, settingValue?: string, isPattern?:
   const debouncedResize = debounce(() => {
     if (isPattern) {
       if (blobRef.current) {
-        setValue(undefined);
         const patternUrl = URL.createObjectURL(blobRef.current);
         renderPatternToCanvas(patternUrl, window.innerWidth, window.innerHeight)
           .then((canvas) => {

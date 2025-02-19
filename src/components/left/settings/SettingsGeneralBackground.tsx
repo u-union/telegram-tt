@@ -124,7 +124,6 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
   });
 
   const handleWallPaperSelect = useLastCallback((slug: string) => {
-    setThemeSettings({ theme: themeRef.current!, background: slug });
     const currentWallpaper = loadedWallpapers && loadedWallpapers.find((wallpaper) => wallpaper.slug === slug);
     
     if (currentWallpaper?.pattern) {
@@ -132,6 +131,7 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
       const patternColor = theme === 'dark' ? DARK_THEME_PATTERN_COLOR : DEFAULT_PATTERN_COLOR;
       setThemeSettings({
         theme: themeRef.current!,
+        background: slug,
         backgroundColor: backgroundColor,
         patternColor,
         isPattern: true,
@@ -146,6 +146,7 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
           const rgbColor = `#${rgb2hex(color)}`;
           setThemeSettings({
             theme: themeRef.current!,
+            background: slug,
             backgroundColor: rgbColor,
             patternColor,
             isPattern: false,

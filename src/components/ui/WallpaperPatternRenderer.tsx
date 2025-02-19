@@ -340,7 +340,7 @@ export const renderPatternToCanvas = async (
   img.crossOrigin = 'anonymous';
 
   await new Promise((resolve, reject) => {
-    img.complete ? resolve(img) : img.onload = () => resolve(img);
+    img.onload = resolve;
     img.onerror = reject;
     img.src = url;
   });
