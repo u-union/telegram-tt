@@ -48,21 +48,19 @@ const SettingsFolders: FC<OwnProps> = ({
    * Temporary state for folder details. As not possible to save/get emoji/icon data from API
    * We separatrely save and get icon/emoji related data from local storage
    */
-  const [currentFolderDetails, _setCurrentFolderDetails] = useState<FolderDetails>({ icon: 'folder-badge', iconType: 'icon' });
-  const setCurrentFolderDetails = useLastCallback((details: Partial<FolderDetails>) => {
-    _setCurrentFolderDetails((prev: any) => ({ ...prev, ...details }));
-  });
+  const [currentFolderDetails, setCurrentFolderDetails] = useState<FolderDetails>({ data: 'folder-badge', type: 'icon' });
+  const [currentFolderId, setCurrentFolderId] = useState<number | undefined>(undefined);
 
   // Initial load of folder details (in case of edit state)
   useEffect(() => {
     if (state.folderId) {
       const folderDetails = loadFolderDetails(state.folderId);
-      if (folderDetails) {
+      if (folderDetails?.data && folderDetails?.type) {
         setCurrentFolderDetails(folderDetails);
       }
     }
   }
-  , []);
+    , []);
 
   const handleReset = useLastCallback(() => {
     if (
@@ -72,6 +70,7 @@ const SettingsFolders: FC<OwnProps> = ({
       || currentScreen === SettingsScreens.FoldersEditFolderInvites
     ) {
       setTimeout(() => {
+        setCurrentFolderDetails({ data: 'folder-badge', type: 'icon' });
         dispatch({ type: 'reset' });
       }, TRANSITION_DURATION);
     }
@@ -124,8 +123,8 @@ const SettingsFolders: FC<OwnProps> = ({
      * Save icon details to local storage
      * (When emoji data can be saved to API, this can be removed)
      */
-    saveFolderDetails(newState.folderId!, currentFolderDetails)
-
+    saveFolderDetails(newState.folderId || currentFolderId!, currentFolderDetails);
+    setCurrentFolderDetails({ data: 'folder-badge', type: 'icon' });
     return true;
   });
 
@@ -200,6 +199,7 @@ const SettingsFolders: FC<OwnProps> = ({
           state={state}
           currentFolderDetails={currentFolderDetails}
           setCurrentFolderDetails={setCurrentFolderDetails}
+          setCurrentFolderId={setCurrentFolderId}
           dispatch={dispatch}
           onAddIncludedChats={handleAddIncludedChats}
           onAddExcludedChats={handleAddExcludedChats}

@@ -18,9 +18,8 @@ import './TabList.scss';
 export type TabWithProperties = {
   id?: number;
   title: string;
-  icon?: string;
+  iconData?: string;
   iconType?: FolderIconType;
-  documentId?: string;
   badgeCount?: number;
   isBlocked?: boolean;
   isBadgeActive?: boolean;

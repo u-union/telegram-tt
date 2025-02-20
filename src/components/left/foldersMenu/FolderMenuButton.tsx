@@ -24,15 +24,14 @@ import { FolderDetails, FolderIconType } from "./FolderMenuHelper";
 const FolderMenuButton: FC<{
   badgeCount?: number;
   contextActions?: MenuItemContextAction[];
-  icon: string;
+  iconData: string;
   iconType?: FolderIconType;
-  documentId?: string;
   index: number;
   isActive: boolean;
   isBlocked?: boolean;
   name: string;
   onClick: (index: number) => void;
-}> = ({ badgeCount, contextActions, icon, documentId, iconType, index, isActive, isBlocked, name, onClick }) => {
+}> = ({ badgeCount, contextActions, iconData, iconType, index, isActive, isBlocked, name, onClick }) => {
   const { isMobile } = useAppLayout();
   const oldLang = useOldLang();
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -64,7 +63,7 @@ const FolderMenuButton: FC<{
         onClick={() => onClick(index)}
         ariaLabel={oldLang('lng_settings_information')}
       >
-        {renderFolderIcon({ icon: icon, iconType, documentId })}
+        {renderFolderIcon({ data: iconData, type: iconType })}
         <span className={buildClassName("folderName", isMobile && "hideText")} >{name}</span>
       </Button>
 
@@ -109,13 +108,13 @@ const FolderMenuButton: FC<{
 export default memo(FolderMenuButton);
 
 export const renderFolderIcon = useLastCallback((folderDetails: FolderDetails) => {
-  switch (folderDetails.iconType) {
+  switch (folderDetails.type) {
     case 'icon':
-      return <Icon name={folderDetails.icon as IconName} className="folderIcon" />;
+      return <Icon name={folderDetails.data as IconName} className="folderIcon" />;
     case 'emoji':
-      return <img src={buildEmojiSrc(folderDetails.icon || '')} className="folderEmoji" />;
+      return <img src={buildEmojiSrc(folderDetails.data || '')} className="folderEmoji" />;
     case 'custom-emoji':
-      return <CustomEmoji documentId={folderDetails.documentId || ''} className="folderCustomEmoji" size={36} />;
+      return <CustomEmoji documentId={folderDetails.data || ''} className="folderCustomEmoji" size={36} />;
     default:
       return undefined;
   }

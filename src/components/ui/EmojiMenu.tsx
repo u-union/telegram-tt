@@ -1,4 +1,4 @@
-import React, { FC, memo, useEffect, useMemo, useRef, useState } from "../../lib/teact/teact";
+import React, { FC, memo, RefObject, useEffect, useMemo, useRef, useState } from "../../lib/teact/teact";
 import { withGlobal } from "../../global";
 import { requestMutation } from "../../lib/fasterdom/fasterdom";
 import { BASE_URL, IS_PACKAGED_ELECTRON } from "../../config";
@@ -55,7 +55,7 @@ export type EmojiMenuData = {
 type OwnProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onSelection: (iconType: FolderIconType, emoji?: string, documentId?: string) => void;
+  onSelection: (type: FolderIconType, data?: string) => void;
 };
 
 type StateProps = {
@@ -167,11 +167,37 @@ const EmojiMenu: FC<OwnProps & StateProps> = ({
               className="picker-tab"
               isHidden={!isOpen || !isActive}
               loadAndPlay={isOpen && (isActive || isFrom)}
-              onCustomEmojiSelect={(emoji) => emoji?.emoji && onSelection('custom-emoji', emoji.emoji, emoji.id)}
+              onCustomEmojiSelect={(emoji) => emoji?.emoji && onSelection('custom-emoji', emoji.id)}
             />
           );
       }
     });
+
+  // Component for lazy emoji rendering (render category only when it's visible)
+  const LazyEmojiImage: FC<{
+    src: string,
+    containerRef: RefObject<HTMLDivElement | null>
+  }> = memo(({ src, containerRef }) => {
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+      if (!containerRef.current) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      });
+      observer.observe(containerRef.current);
+
+      return () => observer.disconnect();
+    }, []);
+
+    return (
+      <> {visible ? <EmojiImage src={src} /> : <div className="EmojiImageSkeleton" />} </>
+    );
+  });
 
   // Component for regular emoji rendering
   const EmojiImage: FC<{ src: string }> = memo(({ src }) => {
@@ -220,45 +246,49 @@ const EmojiMenu: FC<OwnProps & StateProps> = ({
     onEmojiSelect?: (emoji: Emoji) => void
     onIconSelect?: (icon: IconName) => void
   }> = useMemo(() => {
-    return ({ emojiList, categoryName, type, onEmojiSelect, onIconSelect }) => (
-      <>
-        {categoryName && (
-          <div className="emoji-list-header">
-            <p className="emoji-list-header-text" dir="auto">
-              {categoryName}
-            </p>
-          </div>)
-        }
-        <div className={buildClassName('EmojiList', 'no-swipe')}>
-          {emojiList.map((_emoji) => {
-            if (type === 'emoji') {
-              const emoji = emojiMenuData?.emojis?.get(_emoji) as Emoji;
-              const src = buildEmojiSrc(emoji.image);
-              return (
-                <div
-                  className="EmojiButton"
-                  onMouseDown={(e) => e.button === MouseButton.Main && onEmojiSelect?.(emoji)}
-                  title={`:${emoji.names[0]}:`}
-                >
-                  {IS_EMOJI_SUPPORTED ? emoji.native : <EmojiImage src={src} />}
-                </div>)
-            } else if (type === 'icon') {
-              const icon = _emoji as IconName;
-              return (
-                <div
-                  className="EmojiButton"
-                  onMouseDown={(e) => e.button === MouseButton.Main && onIconSelect?.(icon)}
-                  title={`:${icon}:`}
-                >
-                  <Icon name={icon} className="emojiIcon" />
-                </div>
-              );
-            }
-          })
+    return ({ emojiList, categoryName, type, onEmojiSelect, onIconSelect }) => {
+      const listRef = useRef<HTMLDivElement>(null);
+      return (
+        <>
+          {categoryName && (
+            <div className="emoji-list-header">
+              <p className="emoji-list-header-text" dir="auto">
+                {categoryName}
+              </p>
+            </div>)
           }
-        </div>
-      </>
-    );
+          <div ref={listRef} className={buildClassName('EmojiList', 'no-swipe')}>
+            {emojiList.map((_emoji) => {
+              if (type === 'emoji') {
+                const emoji = emojiMenuData?.emojis?.get(_emoji) as Emoji;
+                const src = buildEmojiSrc(emoji.image);
+
+                return (
+                  <div
+                    className="EmojiButton"
+                    onMouseDown={(e) => e.button === MouseButton.Main && onEmojiSelect?.(emoji)}
+                    title={`:${emoji.names[0]}:`}
+                  >
+                    {IS_EMOJI_SUPPORTED ? emoji.native : <LazyEmojiImage src={src} containerRef={listRef} />}
+                  </div>)
+              } else if (type === 'icon') {
+                const icon = _emoji as IconName;
+                return (
+                  <div
+                    className="EmojiButton"
+                    onMouseDown={(e) => e.button === MouseButton.Main && onIconSelect?.(icon)}
+                    title={`:${icon}:`}
+                  >
+                    <Icon name={icon} className="emojiIcon" />
+                  </div>
+                );
+              }
+            })
+            }
+          </div>
+        </>
+      );
+    };
   }, [emojiMenuData]);
 
   return (

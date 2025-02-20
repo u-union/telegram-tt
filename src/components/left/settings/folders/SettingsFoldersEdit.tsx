@@ -6,7 +6,7 @@ import { getActions, getGlobal, withGlobal } from '../../../../global';
 
 import type { ApiChatlistExportedInvite } from '../../../../api/types';
 
-import { STICKER_SIZE_FOLDER_SETTINGS } from '../../../../config';
+import { ARCHIVED_FOLDER_ID, STICKER_SIZE_FOLDER_SETTINGS } from '../../../../config';
 import { isUserId } from '../../../../global/helpers';
 import { selectCanShareFolder } from '../../../../global/selectors';
 import { selectCurrentLimit } from '../../../../global/selectors/limits';
@@ -39,6 +39,7 @@ type OwnProps = {
   state: FoldersState;
   currentFolderDetails: FolderDetails;
   setCurrentFolderDetails: (details: Partial<FolderDetails>) => void;
+  setCurrentFolderId: (id: number) => void;
   dispatch: FolderEditDispatch;
   onAddIncludedChats: VoidFunction;
   onAddExcludedChats: VoidFunction;
@@ -52,6 +53,7 @@ type OwnProps = {
 };
 
 type StateProps = {
+  orderedIds?: number[];
   loadedActiveChatIds?: string[];
   loadedArchivedChatIds?: string[];
   invites?: ApiChatlistExportedInvite[];
@@ -72,6 +74,7 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
   state,
   currentFolderDetails,
   setCurrentFolderDetails,
+  setCurrentFolderId,
   dispatch,
   onAddIncludedChats,
   onAddExcludedChats,
@@ -81,6 +84,7 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
   onReset,
   isRemoved,
   onBack,
+  orderedIds,
   loadedActiveChatIds,
   isOnlyInvites,
   loadedArchivedChatIds,
@@ -108,6 +112,13 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
       onReset();
     }
   }, [isRemoved, onReset]);
+
+  useEffect(() => {
+    if (isCreating) {
+      const id = Math.max(...(orderedIds || []), ARCHIVED_FOLDER_ID) + 1;
+      setCurrentFolderId(id);
+    }
+  }, []);
 
   useEffect(() => {
     if (isActive && state.folderId && state.folder.isChatList) {
@@ -324,8 +335,8 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
               <EmojiMenu
                 isOpen={isEmojiMenuOpen}
                 setIsOpen={setIsEmojiMenuOpen}
-                onSelection={(iconType, icon, documentId) => {
-                  setCurrentFolderDetails({ icon, iconType, documentId });
+                onSelection={(type, data) => {
+                  setCurrentFolderDetails({ type, data });
                   setIsEmojiMenuOpen(false);
                 }}
               />
@@ -429,10 +440,11 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
 export default memo(withGlobal<OwnProps>(
   (global, { state }): StateProps => {
     const { listIds } = global.chats;
-    const { byId, invites } = global.chatFolders;
+    const { orderedIds, byId, invites } = global.chatFolders;
     const chatListCount = Object.values(byId).reduce((acc, el) => acc + (el.isChatList ? 1 : 0), 0);
 
     return {
+      orderedIds,
       loadedActiveChatIds: listIds.active,
       loadedArchivedChatIds: listIds.archived,
       invites: state.folderId ? (invites[state.folderId] || MEMO_EMPTY_ARRAY) : undefined,

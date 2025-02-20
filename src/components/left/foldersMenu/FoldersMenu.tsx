@@ -144,7 +144,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       // Get icon details from local storage
       const details: FolderDetails | null =
         id === ALL_FOLDER_ID ?
-          { icon: ALL_FOLDER_MENU_ICON, iconType: 'icon' } :
+          { data: ALL_FOLDER_MENU_ICON, type: 'icon' } :
           loadFolderDetails(id);
 
       if (canShareFolder) {
@@ -203,9 +203,8 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       return {
         id,
         title: title.text,
-        icon: details?.icon || 'folder-badge',
-        iconType: details?.iconType || 'icon',
-        documentId: details?.documentId,
+        iconData: details?.data || 'folder-badge',
+        iconType: details?.type && details.data ? details.type : 'icon',
         badgeCount: folderCountersById[id]?.chatsCount,
         isBadgeActive: Boolean(folderCountersById[id]?.notificationsCount),
         isBlocked,
@@ -322,9 +321,8 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
               key={tab.id}
               badgeCount={tab.badgeCount}
               contextActions={tab.contextActions}
-              icon={tab.icon}
+              iconData={tab.iconData}
               iconType={tab.iconType}
-              documentId={tab.documentId}
               index={i}
               isActive={i === activeChatFolder && isChatListContent}
               isBlocked={tab.isBlocked}

@@ -2,7 +2,7 @@
 
 #FolderMenu {
   --folder-menu-width: 3.5rem;
-  --folder-icon-size: 1.8rem;
+  --folder-icon-size: 2rem;
   --folder-emoji-size: 70%;
   --folder-name-size: 0.65rem;
   --folder-badge-right: 0.4rem;
@@ -11,7 +11,7 @@
 
   @media (min-width: 926px) {
     --folder-menu-width: 4.5rem;
-    --folder-icon-size: 2rem;
+    --folder-icon-size: 2.3rem;
     --folder-emoji-size: 50%;
     --folder-name-size: 0.75rem;
     --folder-badge-right: 0.7rem;
@@ -21,7 +21,7 @@
 
   @media (min-width: 1276px) {
     --folder-menu-width: 5.5rem;
-    --folder-icon-size: 2.2rem;
+    --folder-icon-size: 2.5rem;
     --folder-emoji-size: 45%;
     --folder-name-size: 0.85rem;
     --folder-badge-right: 1.5rem;
