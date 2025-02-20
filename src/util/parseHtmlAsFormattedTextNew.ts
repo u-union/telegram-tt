@@ -105,8 +105,8 @@ function preprocessText(html: string, withMarkdownLinks: boolean): string {
   processedText = processedText.replace(preRegex, '<pre data-language="$1">$2</pre>');
 
   // Replace '\n *spacing allowed* > *everything* \n' with '<blockquote>'
-  const blockquoteRegex = new RegExp('(?:^|\\n)(?:\\s*)&gt;([\\s\\S]*?)(?=\\n|$)', 'g');
-  processedText = processedText.replace(blockquoteRegex, '\n<blockquote data-can-collapse="false">$1</blockquote>\n');
+  const blockquoteRegex = new RegExp('(?:^|\\n)&gt; ([\\s\\S]*?)(?=\\n|$)', 'g');
+  processedText = processedText.replace(blockquoteRegex, '<blockquote data-can-collapse="false">$1</blockquote>\n');
 
   if (withMarkdownLinks) {
     // Handle markdown links
@@ -218,6 +218,9 @@ function parseHtmlToTree(html: string, skipMarkdown?: boolean): MarkupTree {
 
   const parsedTree: MarkupTree = { text: '' };
   parsedTree.children = walk(markupTokens);
+
+  // Check for blockquotes that are multiline
+  parsedTree.children = checkForMultilineBlockquotes(parsedTree.children);
 
   return parsedTree;
 }
@@ -346,3 +349,44 @@ function getElementAttributes(element: HTMLElement, type: ApiMessageEntityTypes)
   }
 }
 
+function checkForMultilineBlockquotes(children: MarkupTreeNode[]): MarkupTreeNode[] {
+  if (!children) {
+    return children;
+  }
+  
+  // Check if the tree has blockquotes only on the top level
+  const newChildren: MarkupTreeNode[] = [];
+  for (let i = 0; i < children.length; i++) {
+    if (children[i].type === ApiMessageEntityTypes.Blockquote) {
+      const quoteStart = children[i].start;
+      let quoteEnd = children[i].end;
+      let quoteChildren = children[i].children || [];
+
+      // check next childrens until the next non-blockquote
+      let j = i + 1;
+      while (
+          j < children.length &&
+          children[j].type === ApiMessageEntityTypes.Blockquote &&
+          children[j].start === children[j - 1].end + 1
+        ) {
+        quoteEnd = children[j].end;
+        quoteChildren = quoteChildren.concat(children[j].children || []);
+        j++;
+      }
+
+      newChildren.push({
+        type: ApiMessageEntityTypes.Blockquote,
+        start: quoteStart,
+        end: quoteEnd,
+        children: quoteChildren,
+        canCollapse: children[i].canCollapse,
+      });
+
+      i = j - 1;
+    } else {
+      newChildren.push(children[i]);
+    }
+  }
+
+  return newChildren;
+}
