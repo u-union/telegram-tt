@@ -47,6 +47,7 @@ const SettingsFolders: FC<OwnProps> = ({
   /**
    * Temporary state for folder details. As not possible to save/get emoji/icon data from API
    * We separatrely save and get icon/emoji related data from local storage
+   * - onReset state is reseted, but not emoji, as it's not part of state (bug / would be reasolved when emoji is part of state)
    */
   const [currentFolderDetails, setCurrentFolderDetails] = useState<FolderDetails>({ data: 'folder-badge', type: 'icon' });
   const [currentFolderId, setCurrentFolderId] = useState<number | undefined>(undefined);
@@ -124,7 +125,6 @@ const SettingsFolders: FC<OwnProps> = ({
      * (When emoji data can be saved to API, this can be removed)
      */
     saveFolderDetails(newState.folderId || currentFolderId!, currentFolderDetails);
-    setCurrentFolderDetails({ data: 'folder-badge', type: 'icon' });
     return true;
   });
 
