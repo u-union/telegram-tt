@@ -259,7 +259,7 @@ const EmojiMenu: FC<OwnProps & StateProps> = ({
         </div>
       </>
     );
-  }, []);
+  }, [emojiMenuData]);
 
   return (
     <Menu

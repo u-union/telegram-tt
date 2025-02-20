@@ -63,6 +63,7 @@ type StateProps = {
 
 const SUBMIT_TIMEOUT = 500;
 const INITIAL_CHATS_LIMIT = 5;
+const FOLDER_TITLE_MAX_LENGTH = 12;
 
 export const ERROR_NO_TITLE = 'Please provide a title for this folder.';
 export const ERROR_NO_CHATS = 'ChatList.Filter.Error.Empty';
@@ -305,6 +306,7 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
               className="mb-0"
               label={lang('FilterNameHint')}
               value={state.folder.title.text}
+              maxLength={FOLDER_TITLE_MAX_LENGTH}
               onChange={handleChange}
               error={state.error && state.error === ERROR_NO_TITLE ? ERROR_NO_TITLE : undefined}
             />

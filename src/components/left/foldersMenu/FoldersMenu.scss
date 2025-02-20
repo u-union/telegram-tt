@@ -4,7 +4,7 @@
   --folder-menu-width: 3.5rem;
   --folder-icon-size: 1.8rem;
   --folder-emoji-size: 70%;
-  --folder-name-size: 0.6rem;
+  --folder-name-size: 0.65rem;
   --folder-badge-right: 0.4rem;
   --button-top-margin: 0rem;
   --button-badge-top: 0.1rem;
@@ -12,8 +12,8 @@
   @media (min-width: 926px) {
     --folder-menu-width: 4.5rem;
     --folder-icon-size: 2rem;
-    --folder-emoji-size: 60%;
-    --folder-name-size: 0.7rem;
+    --folder-emoji-size: 50%;
+    --folder-name-size: 0.75rem;
     --folder-badge-right: 0.7rem;
     --button-top-margin: 0.6rem;
     --button-badge-top: 0.25rem;
@@ -22,7 +22,7 @@
   @media (min-width: 1276px) {
     --folder-menu-width: 5.5rem;
     --folder-icon-size: 2.2rem;
-    --folder-emoji-size: 50%;
+    --folder-emoji-size: 45%;
     --folder-name-size: 0.85rem;
     --folder-badge-right: 1.5rem;
   }
@@ -179,17 +179,16 @@
 
         .folderIcon {
           font-size: var(--folder-icon-size);
-          opacity: 0.7;
+          opacity: 0.8;
         }
 
         .folderName {
-          margin-top: 0.2rem;
+          margin-top: 0.05rem;
           font-family: 'Roboto', sans-serif;
           font-size: var(--folder-name-size);
           font-weight: 400;
           overflow: hidden;
           width: 100%;
-          opacity: 0.8;
         }
 
         color: var(--color-text-secondary);
@@ -200,7 +199,7 @@
 
         &.button-active {
           color: var(--color-primary);
-          .folderIcon, .folderName {
+          .folderIcon {
             opacity: 1;
           }
         }

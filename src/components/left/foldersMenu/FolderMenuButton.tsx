@@ -115,7 +115,7 @@ export const renderFolderIcon = useLastCallback((folderDetails: FolderDetails) =
     case 'emoji':
       return <img src={buildEmojiSrc(folderDetails.icon || '')} className="folderEmoji" />;
     case 'custom-emoji':
-      return <CustomEmoji documentId={folderDetails.documentId || ''} className="folderCustomEmoji" size={40} />;
+      return <CustomEmoji documentId={folderDetails.documentId || ''} className="folderCustomEmoji" size={36} />;
     default:
       return undefined;
   }

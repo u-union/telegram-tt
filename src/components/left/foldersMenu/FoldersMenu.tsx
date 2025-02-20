@@ -126,7 +126,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
   const displayedFolders = useMemo(() => {
     return orderedFolderIds
       ? orderedFolderIds
-      .map((id) => id === ALL_FOLDER_ID ? allChatsFolder : chatFoldersById[id] || {}).filter(Boolean)
+        .map((id) => id === ALL_FOLDER_ID ? allChatsFolder : chatFoldersById[id] || {}).filter(Boolean)
       : undefined;
   }, [chatFoldersById, allChatsFolder, orderedFolderIds]);
 
@@ -144,8 +144,8 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       // Get icon details from local storage
       const details: FolderDetails | null =
         id === ALL_FOLDER_ID ?
-        { icon: ALL_FOLDER_MENU_ICON, iconType: 'icon' } :
-        loadFolderDetails(id);
+          { icon: ALL_FOLDER_MENU_ICON, iconType: 'icon' } :
+          loadFolderDetails(id);
 
       if (canShareFolder) {
         contextActions.push({
@@ -200,7 +200,7 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
         });
       }
 
-        return {
+      return {
         id,
         title: title.text,
         icon: details?.icon || 'folder-badge',
