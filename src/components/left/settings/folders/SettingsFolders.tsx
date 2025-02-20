@@ -1,5 +1,5 @@
 import type { FC } from '../../../../lib/teact/teact';
-import React, { memo } from '../../../../lib/teact/teact';
+import React, { memo, useEffect, useState } from '../../../../lib/teact/teact';
 import useLastCallback from '../../../../hooks/useLastCallback';
 import { getActions } from '../../../../global';
 
@@ -13,6 +13,7 @@ import SettingsFoldersChatFilters from './SettingsFoldersChatFilters';
 import SettingsFoldersEdit, { ERROR_NO_CHATS, ERROR_NO_TITLE } from './SettingsFoldersEdit';
 import SettingsFoldersMain from './SettingsFoldersMain';
 import SettingsShareChatlist from './SettingsShareChatlist';
+import { FolderDetails, loadFolderDetails, saveFolderDetails } from '../../foldersMenu/FolderMenuHelper';
 
 import './SettingsFolders.scss';
 
@@ -42,6 +43,26 @@ const SettingsFolders: FC<OwnProps> = ({
     editChatFolder,
     addChatFolder,
   } = getActions();
+
+  /**
+   * Temporary state for folder details. As not possible to save/get emoji/icon data from API
+   * We separatrely save and get icon/emoji related data from local storage
+   */
+  const [currentFolderDetails, _setCurrentFolderDetails] = useState<FolderDetails>({ icon: 'folder-badge', iconType: 'icon' });
+  const setCurrentFolderDetails = useLastCallback((details: Partial<FolderDetails>) => {
+    _setCurrentFolderDetails((prev: any) => ({ ...prev, ...details }));
+  });
+
+  // Initial load of folder details (in case of edit state)
+  useEffect(() => {
+    if (state.folderId) {
+      const folderDetails = loadFolderDetails(state.folderId);
+      if (folderDetails) {
+        setCurrentFolderDetails(folderDetails);
+      }
+    }
+  }
+  , []);
 
   const handleReset = useLastCallback(() => {
     if (
@@ -99,6 +120,12 @@ const SettingsFolders: FC<OwnProps> = ({
     dispatch({ type: 'setError', payload: undefined });
     dispatch({ type: 'setIsTouched', payload: false });
 
+    /**
+     * Save icon details to local storage
+     * (When emoji data can be saved to API, this can be removed)
+     */
+    saveFolderDetails(newState.folderId!, currentFolderDetails)
+
     return true;
   });
 
@@ -112,7 +139,6 @@ const SettingsFolders: FC<OwnProps> = ({
   const handleSaveFilter = useLastCallback(() => {
     const newState = dispatch({ type: 'saveFilters' });
     handleReset();
-    saveState(newState);
   });
 
   const handleCreateFolder = useLastCallback(() => {
@@ -172,6 +198,8 @@ const SettingsFolders: FC<OwnProps> = ({
       return (
         <SettingsFoldersEdit
           state={state}
+          currentFolderDetails={currentFolderDetails}
+          setCurrentFolderDetails={setCurrentFolderDetails}
           dispatch={dispatch}
           onAddIncludedChats={handleAddIncludedChats}
           onAddExcludedChats={handleAddExcludedChats}

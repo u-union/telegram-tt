@@ -3,9 +3,11 @@ import React, { FC, memo, useRef } from "../../../lib/teact/teact";
 import useAppLayout from "../../../hooks/useAppLayout";
 import useContextMenuHandlers from "../../../hooks/useContextMenuHandlers";
 import useLastCallback from "../../../hooks/useLastCallback";
+import useOldLang from "../../../hooks/useOldLang";
 
 import { CHAT_HEIGHT_PX } from "../../../config";
 import Icon from "../../common/icons/Icon";
+import CustomEmoji from "../../common/CustomEmoji";
 import { IconName } from "../../../types/icons";
 
 import buildClassName from "../../../util/buildClassName";
@@ -16,19 +18,23 @@ import Menu from "../../ui/Menu";
 import MenuItem from "../../ui/MenuItem";
 import MenuSeparator from "../../ui/MenuSeparator";
 import { MenuItemContextAction } from "../../ui/ListItem";
+import { buildEmojiSrc } from "../../ui/EmojiMenu";
+import { FolderDetails, FolderIconType } from "./FolderMenuHelper";
 
 const FolderMenuButton: FC<{
   badgeCount?: number;
   contextActions?: MenuItemContextAction[];
-  emoji: IconName;
-  isIcon?: boolean;
+  icon: string;
+  iconType?: FolderIconType;
+  documentId?: string;
   index: number;
   isActive: boolean;
   isBlocked?: boolean;
   name: string;
   onClick: (index: number) => void;
-}> = ({ badgeCount, contextActions, emoji, isIcon, index, isActive, isBlocked, name, onClick }) => {
+}> = ({ badgeCount, contextActions, icon, documentId, iconType, index, isActive, isBlocked, name, onClick }) => {
   const { isMobile } = useAppLayout();
+  const oldLang = useOldLang();
   const buttonRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -56,9 +62,9 @@ const FolderMenuButton: FC<{
         ripple={!isMobile}
         color="translucent"
         onClick={() => onClick(index)}
-      // ariaLabel={oldLang('lng_settings_information')} // todo: check
+        ariaLabel={oldLang('lng_settings_information')}
       >
-        { isIcon ? (<Icon className="folderIcon" name={emoji} />) : (<span className="folderEmoji">{emoji}</span>) }
+        {renderFolderIcon({ icon: icon, iconType, documentId })}
         <span className={buildClassName("folderName", isMobile && "hideText")} >{name}</span>
       </Button>
 
@@ -78,7 +84,7 @@ const FolderMenuButton: FC<{
           getMenuElement={useLastCallback(() => menuRef.current)}
           getRootElement={useLastCallback(() => buttonRef.current)}
           getLayout={useLastCallback(() => ({ withPortal: true, extraMarginTop: -100 }))}
-          >
+        >
           {contextActions.map((action) => (
             ('isSeparator' in action) ? (
               <MenuSeparator key={action.key || 'separator'} />
@@ -101,3 +107,16 @@ const FolderMenuButton: FC<{
 }
 
 export default memo(FolderMenuButton);
+
+export const renderFolderIcon = useLastCallback((folderDetails: FolderDetails) => {
+  switch (folderDetails.iconType) {
+    case 'icon':
+      return <Icon name={folderDetails.icon as IconName} className="folderIcon" />;
+    case 'emoji':
+      return <img src={buildEmojiSrc(folderDetails.icon || '')} className="folderEmoji" />;
+    case 'custom-emoji':
+      return <CustomEmoji documentId={folderDetails.documentId || ''} className="folderCustomEmoji" size={40} />;
+    default:
+      return undefined;
+  }
+});

@@ -144,15 +144,6 @@ const foldersReducer: StateReducer<FoldersState, FoldersActions> = (
         },
         isTouched: true,
       };
-    case 'setIcon':
-      return {
-        ...state,
-        folder: {
-          ...state.folder,
-          emoticon: JSON.stringify(action.payload),
-        },
-        isTouched: true,
-      };
     case 'setFolderId':
       return {
         ...state,

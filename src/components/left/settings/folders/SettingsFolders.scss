@@ -12,6 +12,8 @@
     width: 100%;
 
     .input-emoji-button {
+      --custom-emoji-size: 2.5rem;
+
       position: absolute;
 
       width: fit-content;
@@ -25,7 +27,8 @@
       font-size: 1.8rem;
 
       .folderEmoji {
-        padding-top: 0.1rem;
+        width: 2rem;
+        height: auto;
       }
     }
   }

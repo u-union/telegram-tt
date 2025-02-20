@@ -2,7 +2,8 @@
 
 #FolderMenu {
   --folder-menu-width: 3.5rem;
-  --folder-icon-size: 1.7rem;
+  --folder-icon-size: 1.8rem;
+  --folder-emoji-size: 70%;
   --folder-name-size: 0.6rem;
   --folder-badge-right: 0.4rem;
   --button-top-margin: 0rem;
@@ -10,7 +11,8 @@
 
   @media (min-width: 926px) {
     --folder-menu-width: 4.5rem;
-    --folder-icon-size: 1.8rem;
+    --folder-icon-size: 2rem;
+    --folder-emoji-size: 60%;
     --folder-name-size: 0.7rem;
     --folder-badge-right: 0.7rem;
     --button-top-margin: 0.6rem;
@@ -19,7 +21,8 @@
 
   @media (min-width: 1276px) {
     --folder-menu-width: 5.5rem;
-    --folder-icon-size: 2rem;
+    --folder-icon-size: 2.2rem;
+    --folder-emoji-size: 50%;
     --folder-name-size: 0.85rem;
     --folder-badge-right: 1.5rem;
   }
@@ -160,6 +163,8 @@
       padding: 0.3rem;
 
       .Button {
+        --custom-emoji-size: 2.5rem;
+
         display: flex;
         flex-direction: column;
         text-transform: none;
@@ -167,12 +172,14 @@
         margin-top: var(--button-top-margin);
         height: 100%;
 
-        .folderIcon, .folderEmoji {
-          font-size: var(--folder-icon-size);
+        .folderEmoji {
+          width: var(--folder-emoji-size);
+          height: auto;
+        }
 
-          &.folderIcon {
-            opacity: 0.7;
-          }
+        .folderIcon {
+          font-size: var(--folder-icon-size);
+          opacity: 0.7;
         }
 
         .folderName {

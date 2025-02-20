@@ -10,7 +10,7 @@ import { IS_ANDROID, IS_IOS } from '../../util/windowEnvironment';
 import useHorizontalScroll from '../../hooks/useHorizontalScroll';
 import useOldLang from '../../hooks/useOldLang';
 import usePreviousDeprecated from '../../hooks/usePreviousDeprecated';
-
+import { FolderIconType } from '../left/foldersMenu/FolderMenuHelper';
 import Tab from './Tab';
 
 import './TabList.scss';
@@ -19,7 +19,8 @@ export type TabWithProperties = {
   id?: number;
   title: string;
   icon?: string;
-  isIcon?: boolean;
+  iconType?: FolderIconType;
+  documentId?: string;
   badgeCount?: number;
   isBlocked?: boolean;
   isBadgeActive?: boolean;

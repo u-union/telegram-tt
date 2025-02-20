@@ -28,6 +28,7 @@ import LeftSideMenuItems from "../main/LeftSideMenuItems";
 import { MenuItemContextAction } from "../../ui/ListItem";
 import { TabWithProperties } from "../../ui/TabList";
 import FolderMenuButton from "./FolderMenuButton";
+import { FolderDetails, loadFolderDetails } from "./FolderMenuHelper";
 
 import './FoldersMenu.scss';
 
@@ -116,7 +117,6 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
     return {
       id: ALL_FOLDER_ID,
       title: { text: lang('FilterAllChats').length > 9 ? lang('FilterAllChatsShort') : lang('FilterAllChats') },
-      emoticon: JSON.stringify({ emoji: ALL_FOLDER_MENU_ICON, isIcon: true }),
       includedChatIds: MEMO_EMPTY_ARRAY,
       excludedChatIds: MEMO_EMPTY_ARRAY,
     } satisfies ApiChatFolder;
@@ -141,7 +141,11 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       const isBlocked = id !== ALL_FOLDER_ID && i > maxFolders - 1;
       const canShareFolder = selectCanShareFolder(getGlobal(), id);
       const contextActions: MenuItemContextAction[] = [];
-      const { emoji, isIcon } = JSON.parse(folder.emoticon || '{}');
+      // Get icon details from local storage
+      const details: FolderDetails | null =
+        id === ALL_FOLDER_ID ?
+        { icon: ALL_FOLDER_MENU_ICON, iconType: 'icon' } :
+        loadFolderDetails(id);
 
       if (canShareFolder) {
         contextActions.push({
@@ -196,11 +200,12 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
         });
       }
 
-      return {
+        return {
         id,
         title: title.text,
-        icon: emoji || 'folder-badge',
-        isIcon: !emoji || isIcon,
+        icon: details?.icon || 'folder-badge',
+        iconType: details?.iconType || 'icon',
+        documentId: details?.documentId,
         badgeCount: folderCountersById[id]?.chatsCount,
         isBadgeActive: Boolean(folderCountersById[id]?.notificationsCount),
         isBlocked,
@@ -254,31 +259,6 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
       document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [currentUserId, folderTabs, openChat, setActiveChatFolder]);
-
-  // Handle swipe gestures to switch chat folders (Do not think, it needed in current approach)
-  // useEffect(() => {
-  //   if (!IS_TOUCH_ENV || !folderTabs?.length || isForumPanelOpen) {
-  //     return undefined;
-  //   }
-
-  //   return captureEvents(transitionRef.current!, {
-  //     selectorToPreventScroll: '.chat-list',
-  //     onSwipe: ((e, direction) => {
-  //       if (direction === SwipeDirection.Left) {
-  //         setActiveChatFolder(
-  //           { activeChatFolder: Math.min(activeChatFolder + 1, folderTabs.length - 1) },
-  //           { forceOnHeavyAnimation: true },
-  //         );
-  //         return true;
-  //       } else if (direction === SwipeDirection.Right) {
-  //         setActiveChatFolder({ activeChatFolder: Math.max(0, activeChatFolder - 1) }, { forceOnHeavyAnimation: true });
-  //         return true;
-  //       }
-
-  //       return false;
-  //     }),
-  //   });
-  // }, [activeChatFolder, folderTabs, isForumPanelOpen, setActiveChatFolder]);
 
   // Prevent `activeTab` pointing at non-existing folder after update
   useEffect(() => {
@@ -342,8 +322,9 @@ const FoldersMenu: FC<OwnProps & StateProps> = ({
               key={tab.id}
               badgeCount={tab.badgeCount}
               contextActions={tab.contextActions}
-              emoji={tab.icon as IconName}
-              isIcon={tab.isIcon}
+              icon={tab.icon}
+              iconType={tab.iconType}
+              documentId={tab.documentId}
               index={i}
               isActive={i === activeChatFolder && isChatListContent}
               isBlocked={tab.isBlocked}
