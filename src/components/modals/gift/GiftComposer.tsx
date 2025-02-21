@@ -313,7 +313,7 @@ export default memo(withGlobal<OwnProps>(
   (global, { peerId }): StateProps => {
     const theme = selectTheme(global);
     const {
-      isBlurred: isBackgroundBlurred,
+      blurSize,
       patternColor,
       background: customBackground,
       backgroundColor,
@@ -321,6 +321,7 @@ export default memo(withGlobal<OwnProps>(
     const peer = selectPeer(global, peerId);
 
     const tabState = selectTabState(global);
+    const isBackgroundBlurred = blurSize ? blurSize > 0 : undefined;
 
     return {
       peer,

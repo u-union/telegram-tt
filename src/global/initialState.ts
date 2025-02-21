@@ -285,11 +285,11 @@ export const INITIAL_GLOBAL_STATE: GlobalState = {
     },
     themes: {
       light: {
-        isBlurred: true,
+        blurSize: 0,
         patternColor: DEFAULT_PATTERN_COLOR,
       },
       dark: {
-        isBlurred: true,
+        blurSize: 0,
         patternColor: DARK_THEME_PATTERN_COLOR,
       },
     },
