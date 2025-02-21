@@ -331,7 +331,12 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         focusOnInputBox();
       }
     } else {
-      onInputHtmlChange(innerHTML);
+      // Decode the HTML to text
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = innerHTML;
+      const decodedHtml = tempDiv.textContent || '';
+
+      onInputHtmlChange(decodedHtml);
     }
   });
 

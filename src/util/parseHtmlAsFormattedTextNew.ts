@@ -105,7 +105,7 @@ function preprocessText(html: string, withMarkdownLinks: boolean): string {
   processedText = processedText.replace(preRegex, '<pre data-language="$1">$2</pre>');
 
   // Replace '\n *spacing allowed* > *everything* \n' with '<blockquote>'
-  const blockquoteRegex = new RegExp('(?:^|\\n)&gt; ([\\s\\S]*?)(?=\\n|$)', 'g');
+  const blockquoteRegex = new RegExp('(?:^|\\n)(&gt;|>) ([\\s\\S]*?)(?=\\n|$)', 'g');
   processedText = processedText.replace(blockquoteRegex, '<blockquote data-can-collapse="false">$1</blockquote>\n');
 
   if (withMarkdownLinks) {
