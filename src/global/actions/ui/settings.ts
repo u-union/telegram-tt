@@ -158,9 +158,7 @@ addActionHandler('setThemeSettings', (global, actions, payload): ActionReturnTyp
   }
 
   if ('isPattern' in settings) {
-    if (settings.isPattern) {
-      settings.blurSize = 0;
-    } else {
+    if (!settings.isPattern) {
       settings.scale = 1;
       settings.colors = undefined;
       settings.isDark = false;

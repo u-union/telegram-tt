@@ -49,8 +49,6 @@ const SUPPORTED_TYPES = 'image/jpeg';
 const patternScaleOptionStrings = ['Small', 'Medium', 'Large'];
 const patternScaleOptionValues = [0.75, 1, 1.25];
 
-const runThrottled = throttle((cb) => cb(), 60000, true);
-
 const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
   isActive,
   onScreenSelect,
@@ -203,7 +201,7 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
           onChange={handleWallPaperBlurChange}
           min={0}
           max={100}
-          disabled={isPattern || !background}
+          disabled={!background}
         />
       </div>
 
