@@ -50,9 +50,9 @@ export function blobToFile(blob: Blob, fileName: string) {
 export function preloadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.src = url;
     img.complete ? resolve(img) : img.onload = () => resolve(img); // fix when image is cached
     img.onerror = reject;
-    img.src = url;
   });
 }
 
