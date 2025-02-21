@@ -44,6 +44,7 @@ interface ISelectedTextFormats {
   strikethrough?: boolean;
   monospace?: boolean;
   spoiler?: boolean;
+  quote?: boolean;
 }
 
 interface TextFormatMapping {
@@ -60,7 +61,8 @@ const TEXT_FORMATS: TextFormatMapping[] = [
   { tag: ['DEL'], format: 'strikethrough' },
   { tag: ['CODE'], format: 'monospace', attributes: { class: "text-entity-code", dir: 'auto' } },
   { tag: ['SPAN'], format: 'spoiler', attributes: { class: "spoiler", 'data-entity-type': `${ApiMessageEntityTypes.Spoiler}` } },
-  { tag: ['A'], format: 'link', attributes: { class: 'text-entity-link', dir: 'auto' } }
+  { tag: ['A'], format: 'link', attributes: { class: 'text-entity-link', dir: 'auto' } },
+  { tag: ['BLOCKQUOTE'], format: 'quote', attributes: { class: "text-entity-quote", dir: 'auto' } },
 ];
 
 const getFormatByTag = (tagName: string): keyof ISelectedTextFormats | undefined =>
@@ -474,6 +476,7 @@ const TextFormatter: FC<OwnProps> = ({
   const handleUnderlineText = () => handleFormat('underline');
   const handleStrikethroughText = () => handleFormat('strikethrough');
   const handleMonospaceText = () => handleFormat('monospace');
+  const handleBlockquoteText = () => handleFormat('quote');
   const handleSpoilerText = () => handleFormat('spoiler');
   const handleLinkText = () => {
     const formattedLinkUrl = (ensureProtocol(linkUrl) || '').split('%').map(encodeURI).join('%');
@@ -550,13 +553,13 @@ const TextFormatter: FC<OwnProps> = ({
 
     // With new approach, appling formating is not an issue for strike and monospace
     // However, monospace is not working properly with link (onClick text is being copy only) and with bold (<b> applied but not displayed)
-    if (key === 'monospace') {
+    if (key === 'monospace' || key === 'quote') {
       if (Object.keys(selectedTextFormats).some(
         (fKey) => fKey !== key && Boolean(selectedTextFormats[fKey as keyof ISelectedTextFormats]),
       )) {
         return 'disabled';
       }
-    } else if (selectedTextFormats.monospace) {
+    } else if (selectedTextFormats.monospace || selectedTextFormats.quote) {
       return 'disabled';
     }
 
@@ -621,6 +624,14 @@ const TextFormatter: FC<OwnProps> = ({
           onClick={handleMonospaceText}
         >
           <Icon name="monospace" />
+        </Button>
+        <Button
+          color="translucent"
+          ariaLabel="Quote"
+          className={getFormatButtonClassName('quote')}
+          onClick={handleBlockquoteText}
+        >
+          <Icon name="quote" />
         </Button>
         <div className="TextFormatter-divider" />
         <Button
