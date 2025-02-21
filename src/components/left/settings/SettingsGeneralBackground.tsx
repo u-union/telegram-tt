@@ -12,7 +12,6 @@ import { DARK_THEME_BG_COLOR, DARK_THEME_PATTERN_COLOR, DEFAULT_PATTERN_COLOR, L
 import { selectTheme } from '../../../global/selectors';
 import { getAverageColor, getPatternColor, rgb2hex } from '../../../util/colors';
 import { validateFiles } from '../../../util/files';
-import { throttle } from '../../../util/schedulers';
 import { openSystemFilesDialog } from '../../../util/systemFilesDialog';
 
 import useHistoryBack from '../../../hooks/useHistoryBack';
@@ -67,7 +66,6 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
     setThemeSettings,
   } = getActions();
 
-  const themeRef = useRef<ThemeKey>(theme);
   const lang = useOldLang();
 
   useHistoryBack({
@@ -101,15 +99,15 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
   });
 
   const handleWallPaperBlurChange = useLastCallback((value: number) => {
-    setThemeSettings({ theme: themeRef.current!, blurSize: value });
+    setThemeSettings({ theme: theme, blurSize: value });
   });
 
   const handleLightDarkChange = useLastCallback((value: boolean) => {
-    setThemeSettings({ theme: themeRef.current!, isDark: value });
+    setThemeSettings({ theme: theme, isDark: value });
   });
 
   const handlePatternScaleChange = useLastCallback((value: number) => {
-    setThemeSettings({ theme: themeRef.current!, scale: patternScaleOptionValues[value] });
+    setThemeSettings({ theme: theme, scale: patternScaleOptionValues[value] });
   });
 
   const handleResetToDefault = useLastCallback(() => {
@@ -123,12 +121,12 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
 
   const handleWallPaperSelect = useLastCallback((slug: string) => {
     const currentWallpaper = loadedWallpapers && loadedWallpapers.find((wallpaper) => wallpaper.slug === slug);
-    
+
     if (currentWallpaper?.pattern) {
       const backgroundColor = theme === 'dark' ? DARK_THEME_BG_COLOR : LIGHT_THEME_BG_COLOR;
       const patternColor = theme === 'dark' ? DARK_THEME_PATTERN_COLOR : DEFAULT_PATTERN_COLOR;
       setThemeSettings({
-        theme: themeRef.current!,
+        theme: theme,
         background: slug,
         backgroundColor: backgroundColor,
         patternColor,
@@ -143,7 +141,7 @@ const SettingsGeneralBackground: FC<OwnProps & StateProps> = ({
           const patternColor = getPatternColor(color);
           const rgbColor = `#${rgb2hex(color)}`;
           setThemeSettings({
-            theme: themeRef.current!,
+            theme: theme,
             background: slug,
             backgroundColor: rgbColor,
             patternColor,
