@@ -20,13 +20,15 @@ import MenuItem from '../../ui/MenuItem';
 type OwnProps = {
   currentScreen: SettingsScreens;
   editedFolderId?: number;
-  onReset: () => void;
+  isReturnButtonHide?: boolean;
+  onReset: NoneToVoidFunction;
   onScreenSelect: (screen: SettingsScreens) => void;
 };
 
 const SettingsHeader: FC<OwnProps> = ({
   currentScreen,
   editedFolderId,
+  isReturnButtonHide,
   onReset,
   onScreenSelect,
 }) => {
@@ -248,7 +250,7 @@ const SettingsHeader: FC<OwnProps> = ({
           <h3>
             {oldLang(
               currentScreen === SettingsScreens.FoldersIncludedChats
-                  || currentScreen === SettingsScreens.FoldersIncludedChatsFromChatList
+                || currentScreen === SettingsScreens.FoldersIncludedChatsFromChatList
                 ? 'FilterInclude' : 'FilterExclude',
             )}
           </h3>
@@ -292,6 +294,7 @@ const SettingsHeader: FC<OwnProps> = ({
         color="translucent"
         onClick={onReset}
         ariaLabel={oldLang('AccDescrGoBack')}
+        className={isReturnButtonHide ? 'hidden' : ''}
       >
         <Icon name="arrow-left" />
       </Button>

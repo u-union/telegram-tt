@@ -54,6 +54,7 @@ type OwnProps = {
   content: LeftColumnContent;
   contactsFilter: string;
   isClosingSearch?: boolean;
+  isMainButtonHide?: boolean;
   shouldSkipTransition?: boolean;
   onSearchQuery: (query: string) => void;
   onSelectSettings: NoneToVoidFunction;
@@ -101,6 +102,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
   areChatsLoaded,
   hasPasscode,
   canSetPasscode,
+  isMainButtonHide,
   onSearchQuery,
   onSelectSettings,
   onSelectContacts,
@@ -196,7 +198,8 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
     Boolean(globalSearchChatId)
     || content === LeftColumnContent.GlobalSearch
     || content === LeftColumnContent.Contacts
-  );
+  ) 
+  || (isDesktop && content === LeftColumnContent.GlobalSearch || content === LeftColumnContent.Contacts);
 
   useEffect(() => (isSearchFocused ? captureEscKeyListener(() => onReset()) : undefined), [isSearchFocused, onReset]);
 
@@ -259,6 +262,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
           className={buildClassName(
             'main-menu',
             oldLang.isRtl && 'rtl',
+            isMainButtonHide && 'hidden',
             shouldHideSearch && oldLang.isRtl && 'right-aligned',
             shouldDisableDropdownMenuTransitionRef.current && oldLang.isRtl && 'disable-transition',
           )}

@@ -1,5 +1,6 @@
 import type { FC } from '../../../../lib/teact/teact';
-import React, { memo, useCallback } from '../../../../lib/teact/teact';
+import React, { memo, useEffect, useState } from '../../../../lib/teact/teact';
+import useLastCallback from '../../../../hooks/useLastCallback';
 import { getActions } from '../../../../global';
 
 import type { ApiChatFolder } from '../../../../api/types';
@@ -12,6 +13,7 @@ import SettingsFoldersChatFilters from './SettingsFoldersChatFilters';
 import SettingsFoldersEdit, { ERROR_NO_CHATS, ERROR_NO_TITLE } from './SettingsFoldersEdit';
 import SettingsFoldersMain from './SettingsFoldersMain';
 import SettingsShareChatlist from './SettingsShareChatlist';
+import { FolderDetails, loadFolderDetails, saveFolderDetails } from '../../foldersMenu/FolderMenuHelper';
 
 import './SettingsFolders.scss';
 
@@ -42,7 +44,26 @@ const SettingsFolders: FC<OwnProps> = ({
     addChatFolder,
   } = getActions();
 
-  const handleReset = useCallback(() => {
+  /**
+   * Temporary state for folder details. As not possible to save/get emoji/icon data from API
+   * We separatrely save and get icon/emoji related data from local storage
+   * - onReset state is reseted, but not emoji, as it's not part of state (bug / would be reasolved when emoji is part of state)
+   */
+  const [currentFolderDetails, setCurrentFolderDetails] = useState<FolderDetails>({ data: 'folder-badge', type: 'icon' });
+  const [currentFolderId, setCurrentFolderId] = useState<number | undefined>(undefined);
+
+  // Initial load of folder details (in case of edit state)
+  useEffect(() => {
+    if (state.folderId) {
+      const folderDetails = loadFolderDetails(state.folderId);
+      if (folderDetails?.data && folderDetails?.type) {
+        setCurrentFolderDetails(folderDetails);
+      }
+    }
+  }
+    , []);
+
+  const handleReset = useLastCallback(() => {
     if (
       currentScreen === SettingsScreens.FoldersCreateFolder
       || currentScreen === SettingsScreens.FoldersEditFolder
@@ -50,6 +71,7 @@ const SettingsFolders: FC<OwnProps> = ({
       || currentScreen === SettingsScreens.FoldersEditFolderInvites
     ) {
       setTimeout(() => {
+        setCurrentFolderDetails({ data: 'folder-badge', type: 'icon' });
         dispatch({ type: 'reset' });
       }, TRANSITION_DURATION);
     }
@@ -67,14 +89,11 @@ const SettingsFolders: FC<OwnProps> = ({
     }
 
     onReset();
-  }, [
-    state.mode, dispatch,
-    currentScreen, onReset, onScreenSelect,
-  ]);
+  });
 
   const isCreating = state.mode === 'create';
 
-  const saveState = useCallback((newState: FoldersState) => {
+  const saveState = useLastCallback((newState: FoldersState) => {
     const { title } = newState.folder;
 
     if (!title) {
@@ -101,56 +120,60 @@ const SettingsFolders: FC<OwnProps> = ({
     dispatch({ type: 'setError', payload: undefined });
     dispatch({ type: 'setIsTouched', payload: false });
 
+    /**
+     * Save icon details to local storage
+     * (When emoji data can be saved to API, this can be removed)
+     */
+    saveFolderDetails(newState.folderId || currentFolderId!, currentFolderDetails);
     return true;
-  }, [dispatch, isCreating]);
+  });
 
-  const handleSaveFolder = useCallback((cb?: NoneToVoidFunction) => {
+  const handleSaveFolder = useLastCallback((cb?: NoneToVoidFunction) => {
     if (!saveState(state)) {
       return;
     }
     cb?.();
-  }, [saveState, state]);
+  });
 
-  const handleSaveFilter = useCallback(() => {
+  const handleSaveFilter = useLastCallback(() => {
     const newState = dispatch({ type: 'saveFilters' });
     handleReset();
-    saveState(newState);
-  }, [dispatch, handleReset, saveState]);
+  });
 
-  const handleCreateFolder = useCallback(() => {
+  const handleCreateFolder = useLastCallback(() => {
     dispatch({ type: 'reset' });
     onScreenSelect(SettingsScreens.FoldersCreateFolder);
-  }, [onScreenSelect, dispatch]);
+  });
 
-  const handleEditFolder = useCallback((folder: ApiChatFolder) => {
+  const handleEditFolder = useLastCallback((folder: ApiChatFolder) => {
     dispatch({ type: 'editFolder', payload: folder });
     onScreenSelect(SettingsScreens.FoldersEditFolder);
-  }, [dispatch, onScreenSelect]);
+  });
 
-  const handleAddIncludedChats = useCallback(() => {
+  const handleAddIncludedChats = useLastCallback(() => {
     dispatch({ type: 'editIncludeFilters' });
     onScreenSelect(currentScreen === SettingsScreens.FoldersEditFolderFromChatList
       ? SettingsScreens.FoldersIncludedChatsFromChatList
       : SettingsScreens.FoldersIncludedChats);
-  }, [currentScreen, dispatch, onScreenSelect]);
+  });
 
-  const handleAddExcludedChats = useCallback(() => {
+  const handleAddExcludedChats = useLastCallback(() => {
     dispatch({ type: 'editExcludeFilters' });
     onScreenSelect(currentScreen === SettingsScreens.FoldersEditFolderFromChatList
       ? SettingsScreens.FoldersExcludedChatsFromChatList
       : SettingsScreens.FoldersExcludedChats);
-  }, [currentScreen, dispatch, onScreenSelect]);
+  });
 
-  const handleShareFolder = useCallback(() => {
+  const handleShareFolder = useLastCallback(() => {
     openShareChatFolderModal({ folderId: state.folderId!, noRequestNextScreen: true });
     dispatch({ type: 'setIsChatlist', payload: true });
     onScreenSelect(SettingsScreens.FoldersShare);
-  }, [dispatch, onScreenSelect, state.folderId]);
+  });
 
-  const handleOpenInvite = useCallback((url: string) => {
+  const handleOpenInvite = useLastCallback((url: string) => {
     openShareChatFolderModal({ folderId: state.folderId!, url, noRequestNextScreen: true });
     onScreenSelect(SettingsScreens.FoldersShare);
-  }, [onScreenSelect, state.folderId]);
+  });
 
   switch (currentScreen) {
     case SettingsScreens.Folders:
@@ -174,6 +197,9 @@ const SettingsFolders: FC<OwnProps> = ({
       return (
         <SettingsFoldersEdit
           state={state}
+          currentFolderDetails={currentFolderDetails}
+          setCurrentFolderDetails={setCurrentFolderDetails}
+          setCurrentFolderId={setCurrentFolderId}
           dispatch={dispatch}
           onAddIncludedChats={handleAddIncludedChats}
           onAddExcludedChats={handleAddExcludedChats}

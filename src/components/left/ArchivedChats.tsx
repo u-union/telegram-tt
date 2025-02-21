@@ -17,14 +17,14 @@ import useOldLang from '../../hooks/useOldLang';
 import useShowTransitionDeprecated from '../../hooks/useShowTransitionDeprecated';
 import useLeftHeaderButtonRtlForumTransition from './main/hooks/useLeftHeaderButtonRtlForumTransition';
 
-import Icon from '../common/icons/Icon';
 import StoryRibbon from '../story/StoryRibbon';
 import StoryToggler from '../story/StoryToggler';
-import Button from '../ui/Button';
 import DropdownMenu from '../ui/DropdownMenu';
 import MenuItem from '../ui/MenuItem';
 import ChatList from './main/ChatList';
 import ForumPanel from './main/ForumPanel';
+import Button from '../ui/Button';
+import Icon from '../common/icons/Icon';
 
 import './ArchivedChats.scss';
 
@@ -33,6 +33,7 @@ export type OwnProps = {
   isForumPanelOpen?: boolean;
   archiveSettings: GlobalState['archiveSettings'];
   isStoryRibbonShown?: boolean;
+  isReturnButtonHide?: boolean;
   onReset: () => void;
   onTopicSearch: NoneToVoidFunction;
   onSettingsScreenSelect: (screen: SettingsScreens) => void;
@@ -45,6 +46,7 @@ const ArchivedChats: FC<OwnProps> = ({
   isForumPanelOpen,
   archiveSettings,
   isStoryRibbonShown,
+  isReturnButtonHide,
   onReset,
   onTopicSearch,
   onSettingsScreenSelect,
@@ -98,6 +100,7 @@ const ArchivedChats: FC<OwnProps> = ({
           onClick={onReset}
           ariaLabel="Return to chat list"
           className={buildClassName(
+            isReturnButtonHide && 'hidden',
             lang.isRtl && 'rtl',
             isForumPanelVisible && lang.isRtl && 'right-aligned',
             shouldDisableDropdownMenuTransitionRef.current && lang.isRtl && 'disable-transition',
@@ -114,7 +117,6 @@ const ArchivedChats: FC<OwnProps> = ({
           <DropdownMenu
             className="archived-chats-more-menu"
             positionX="right"
-            onTransitionEnd={lang.isRtl ? handleDropdownMenuTransitionEnd : undefined}
           >
             <MenuItem icon="archive-from-main" onClick={handleDisplayArchiveInChats}>
               {lang('lng_context_archive_to_list')}

@@ -6,6 +6,34 @@
   gap: 1rem;
 }
 
+.settings-content-header {
+  .settings-folders-input {
+    position: relative;
+    width: 100%;
+
+    .input-emoji-button {
+      --custom-emoji-size: 2.5rem;
+
+      position: absolute;
+
+      width: fit-content;
+      height: fit-content;
+      max-height: 100%;
+      background: none;
+      color: var(--color-text-secondary);
+
+      top: 0;
+      right: 0.4rem;
+      font-size: 1.8rem;
+
+      .folderEmoji {
+        width: 2rem;
+        height: auto;
+      }
+    }
+  }
+}
+
 .settings-folders-blocked-icon {
   color: var(--color-text-secondary);
   margin-left: 0.25rem;
@@ -101,6 +129,7 @@
 
 .settings-sortable-item .Button {
   margin-right: -1rem;
+
   &:hover,
   &:active {
     background-color: transparent !important;

@@ -39,6 +39,7 @@ type OwnProps = {
   isElectronUpdateAvailable?: boolean;
   isForumPanelOpen?: boolean;
   isClosingSearch?: boolean;
+  isMainButtonHide?: boolean;
   onSearchQuery: (query: string) => void;
   onContentChange: (content: LeftColumnContent) => void;
   onSettingsScreenSelect: (screen: SettingsScreens) => void;
@@ -62,6 +63,7 @@ const LeftMain: FC<OwnProps> = ({
   isAppUpdateAvailable,
   isElectronUpdateAvailable,
   isForumPanelOpen,
+  isMainButtonHide,
   onSearchQuery,
   onContentChange,
   onSettingsScreenSelect,
@@ -89,6 +91,7 @@ const LeftMain: FC<OwnProps> = ({
   } = useShowTransitionDeprecated(isAppUpdateAvailable || isElectronUpdateAvailable);
 
   const isMouseInside = useRef(false);
+  const lang = useOldLang();
 
   const handleMouseEnter = useLastCallback(() => {
     if (content !== LeftColumnContent.ChatList) {
@@ -160,9 +163,7 @@ const LeftMain: FC<OwnProps> = ({
         autoCloseTimeout = undefined;
       }
     };
-  }, [content]);
-
-  const lang = useOldLang();
+  }, [content])
 
   return (
     <div
@@ -181,6 +182,7 @@ const LeftMain: FC<OwnProps> = ({
         onReset={onReset}
         shouldSkipTransition={shouldSkipTransition}
         isClosingSearch={isClosingSearch}
+        isMainButtonHide={isMainButtonHide}
       />
       <Transition
         name={shouldSkipTransition ? 'none' : 'zoomFade'}
@@ -196,7 +198,6 @@ const LeftMain: FC<OwnProps> = ({
             case LeftColumnContent.ChatList:
               return (
                 <ChatFolders
-                  shouldHideFolderTabs={isForumPanelVisible}
                   onSettingsScreenSelect={onSettingsScreenSelect}
                   onLeftColumnContentChange={onContentChange}
                   foldersDispatch={foldersDispatch}

@@ -5,6 +5,7 @@ import React, {
 } from '../../lib/teact/teact';
 
 import buildClassName from '../../util/buildClassName';
+import { debounce } from '../../util/schedulers';
 
 import useFlag from '../../hooks/useFlag';
 import useInputFocusOnOpen from '../../hooks/useInputFocusOnOpen';
@@ -39,6 +40,7 @@ type OwnProps = {
   hasDownButton?: boolean;
   teactExperimentControlled?: boolean;
   withBackIcon?: boolean;
+  debounceTime?: number;
   onChange: (value: string) => void;
   onStartBackspace?: NoneToVoidFunction;
   onReset?: NoneToVoidFunction;
@@ -70,6 +72,7 @@ const SearchInput: FC<OwnProps> = ({
   hasDownButton,
   teactExperimentControlled,
   withBackIcon,
+  debounceTime,
   onChange,
   onStartBackspace,
   onReset,
@@ -105,9 +108,10 @@ const SearchInput: FC<OwnProps> = ({
   const oldLang = useOldLang();
   const lang = useLang();
 
+  const handleChangeDebounced = useLastCallback(debounce(onChange, debounceTime || 0, false));
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { currentTarget } = event;
-    onChange(currentTarget.value);
+    debounceTime ? handleChangeDebounced(currentTarget.value) : onChange(currentTarget.value);
 
     if (!isInputFocused) {
       handleFocus();

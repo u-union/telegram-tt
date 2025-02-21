@@ -18,6 +18,7 @@ import FloatingActionButton from '../../ui/FloatingActionButton';
 export type OwnProps = {
   isChannel?: boolean;
   isActive: boolean;
+  isReturnButtonHide?: boolean;
   selectedMemberIds: string[];
   onSelectedMemberIdsChange: (ids: string[]) => void;
   onNextStep: () => void;
@@ -35,6 +36,7 @@ type StateProps = {
 const NewChatStep1: FC<OwnProps & StateProps> = ({
   isChannel,
   isActive,
+  isReturnButtonHide,
   selectedMemberIds,
   localContactIds,
   searchQuery,
@@ -94,6 +96,7 @@ const NewChatStep1: FC<OwnProps & StateProps> = ({
           color="translucent"
           onClick={onReset}
           ariaLabel="Return to Chat List"
+          className={isReturnButtonHide ? 'hidden' : ''}
         >
           <Icon name="arrow-left" />
         </Button>

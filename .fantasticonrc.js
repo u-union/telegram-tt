@@ -11,7 +11,7 @@ module.exports = {
   },
   formatOptions: {
     ts: {
-      types: ['literalId'],
+      types: ['literalId', 'enum'],
       singleQuotes: true,
       literalIdName: 'FontIconName',
     },

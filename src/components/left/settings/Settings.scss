@@ -11,6 +11,10 @@
 
   .left-header {
     padding-right: 0.8125rem;
+
+    .Button.hidden {
+      display: none;
+    }
   }
 
   .self-profile .ProfileInfo {

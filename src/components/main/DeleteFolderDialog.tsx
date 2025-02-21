@@ -8,6 +8,7 @@ import useOldLang from '../../hooks/useOldLang';
 import usePreviousDeprecated from '../../hooks/usePreviousDeprecated';
 
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { deleteFolderDetails } from '../left/foldersMenu/FolderMenuHelper';
 
 export type OwnProps = {
   folder?: ApiChatFolder;
@@ -31,6 +32,12 @@ const DeleteFolderDialog: FC<OwnProps> = ({
     } else {
       deleteChatFolder({ id: renderingFolder!.id });
     }
+
+    /***
+     * Temporary solution for chat folders icons.
+     * As we saving emoji/icon data in localStorage, also delete them on folder deleting
+     */
+    deleteFolderDetails(renderingFolder!.id);
   }, [isMyChatlist, renderingFolder]);
 
   return (

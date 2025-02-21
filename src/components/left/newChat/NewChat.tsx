@@ -14,6 +14,7 @@ import './NewChat.scss';
 export type OwnProps = {
   isActive: boolean;
   isChannel?: boolean;
+  isReturnButtonHide?: boolean;
   content: LeftColumnContent;
   onContentChange: (content: LeftColumnContent) => void;
   onReset: () => void;
@@ -24,6 +25,7 @@ const RENDER_COUNT = Object.keys(LeftColumnContent).length / 2;
 const NewChat: FC<OwnProps> = ({
   isActive,
   isChannel = false,
+  isReturnButtonHide,
   content,
   onContentChange,
   onReset,
@@ -49,6 +51,7 @@ const NewChat: FC<OwnProps> = ({
               <NewChatStep1
                 isChannel={isChannel}
                 isActive={isActive}
+                isReturnButtonHide={isReturnButtonHide}
                 selectedMemberIds={newChatMemberIds}
                 onSelectedMemberIdsChange={setNewChatMemberIds}
                 onNextStep={handleNextStep}
@@ -61,6 +64,7 @@ const NewChat: FC<OwnProps> = ({
               <NewChatStep2
                 isChannel={isChannel}
                 isActive={isStepActive && isActive}
+                isReturnButtonHide={isReturnButtonHide}
                 memberIds={newChatMemberIds}
                 onReset={onReset}
               />

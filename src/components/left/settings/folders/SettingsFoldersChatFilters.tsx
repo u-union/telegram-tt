@@ -53,18 +53,10 @@ const SettingsFoldersChatFilters: FC<OwnProps & StateProps> = ({
   const { selectedChatIds, selectedChatTypes } = useMemo(() => selectChatFilters(state, mode, true), [mode, state]);
   const chatTypes = mode === 'included' ? CUSTOM_PEER_INCLUDED_CHAT_TYPES : CUSTOM_PEER_EXCLUDED_CHAT_TYPES;
 
-  const [isTouched, setIsTouched] = useState(false);
-
   const folderAllOrderedIds = useFolderManagerForOrderedIds(ALL_FOLDER_ID);
   const folderArchivedOrderedIds = useFolderManagerForOrderedIds(ARCHIVED_FOLDER_ID);
 
   const shouldHideChatTypes = state.folder.isChatList;
-
-  useEffect(() => {
-    if (!isActive) {
-      setIsTouched(false);
-    }
-  }, [isActive]);
 
   const displayedIds = useMemo(() => {
     // No need for expensive global updates on chats, so we avoid them
@@ -81,7 +73,6 @@ const SettingsFoldersChatFilters: FC<OwnProps & StateProps> = ({
       type: 'setChatFilter',
       payload: newFilter,
     });
-    setIsTouched(true);
   });
 
   const handleSelectedIdsChange = useLastCallback((ids: string[]) => {
@@ -102,7 +93,6 @@ const SettingsFoldersChatFilters: FC<OwnProps & StateProps> = ({
         payload: { ...state.excludeFilters, excludedChatIds: ids },
       });
     }
-    setIsTouched(true);
   });
 
   const handleSelectedChatTypesChange = useLastCallback((keys: string[]) => {
@@ -128,7 +118,6 @@ const SettingsFoldersChatFilters: FC<OwnProps & StateProps> = ({
         },
       });
     }
-    setIsTouched(true);
   });
 
   useHistoryBack({
@@ -162,7 +151,7 @@ const SettingsFoldersChatFilters: FC<OwnProps & StateProps> = ({
       />
 
       <FloatingActionButton
-        isShown={isTouched}
+        isShown={true} // Show always (no sense to hide, if no chats selected)
         onClick={onSaveFilter}
         ariaLabel={lang('Save')}
       >

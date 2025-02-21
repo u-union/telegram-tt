@@ -8,6 +8,14 @@
     height: 2.5rem;
   }
 
+  .DropdownMenu {
+    margin-right: 0.5rem;
+  
+    &.hidden {
+      display: none;
+    }
+  }
+
   .DropdownMenu.rtl {
     transition: var(--slide-transition) transform;
     position: absolute;
@@ -33,6 +41,7 @@
 
   .animated-menu-icon {
     position: absolute;
+    opacity: 0.7;
 
     &,
     &::before,
@@ -105,22 +114,18 @@
   .extra-spacing {
     position: relative;
     margin-left: 0.8125rem;
-
     body.is-electron.is-macos #Main:not(.is-fullscreen) & {
       margin-left: 0.5rem;
     }
   }
-
   .emoji-status-effect {
     top: 50%;
     left: 50%;
   }
-
   .emoji-status {
     --custom-emoji-size: 1.5rem;
     color: var(--color-primary);
   }
-
   .StarIcon {
     width: 1.5rem;
     height: 1.5rem;
@@ -141,12 +146,10 @@
       pointer-events: none;
     }
   }
-
   .left-search-picker-item {
     color: var(--color-text-secondary);
     font-weight: var(--font-weight-medium);
     padding-right: 0;
-
     &[dir="rtl"] {
       left: auto;
       right: -0.125rem;
