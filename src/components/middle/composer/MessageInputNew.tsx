@@ -288,7 +288,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
 
 
   /**
-   * Focus on the input box on 'Tab' key press
+   * Focus on the input box first on 'Tab' key press
    */
   useEffect(() => {
     const captureFirstTab = debounce((e: KeyboardEvent) => {
@@ -411,11 +411,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   const handleInputBoxMouseDown = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const { button } = e;
-
-    if (button === 0) {
-      // Check if need to display/hide text formatter
-      addEventListener('mouseup', debouncedHandleTextFormatterDisplay, { once: true });
-    }
+    button === 0 && addEventListener('mouseup', debouncedHandleTextFormatterDisplay, { once: true });
   });
 
   /**
@@ -539,6 +535,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       )}
       <TextFormatter
         getHtml={getHtmlInputText}
+        setHtml={onInputHtmlChange}
         isOpen={isTextFormatterOpen}
         anchorPosition={textFormatterAnchorPosition}
         selectedRange={selectedRange}

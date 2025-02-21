@@ -33,7 +33,7 @@ type MarkupTreeNode = {
   canCollapse?: string;
 }
 
-const MAX_REGRESSION_DEPTH = 20;
+const MAX_REGRESSION_DEPTH = 50;
 
 const HTML_TAG_TO_ENTITY: Record<string, ApiMessageEntityTypes> = {
   'b': ApiMessageEntityTypes.Bold,

@@ -27,6 +27,7 @@ import './TextFormatter.scss';
 
 export type OwnProps = {
   getHtml: () => string;
+  setHtml: (html: string) => void;
   isOpen: boolean;
   anchorPosition?: IAnchorPosition;
   selectedRange?: Range;
@@ -35,6 +36,8 @@ export type OwnProps = {
 };
 
 interface ISelectedTextFormats {
+  image?: boolean;
+  link?: boolean
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -43,21 +46,57 @@ interface ISelectedTextFormats {
   spoiler?: boolean;
 }
 
-const TEXT_FORMAT_BY_TAG_NAME: Record<string, keyof ISelectedTextFormats> = {
-  B: 'bold',
-  STRONG: 'bold',
-  I: 'italic',
-  EM: 'italic',
-  U: 'underline',
-  DEL: 'strikethrough',
-  CODE: 'monospace',
-  SPAN: 'spoiler',
-};
+interface TextFormatMapping {
+  tag: string[];
+  format: keyof ISelectedTextFormats;
+  attributes?: Record<string, string>;
+}
+
+const TEXT_FORMATS: TextFormatMapping[] = [
+  { tag: ['IMG'], format: 'image' },
+  { tag: ['B', 'STRONG'], format: 'bold' },
+  { tag: ['I', 'EM'], format: 'italic' },
+  { tag: ['U'], format: 'underline' },
+  { tag: ['DEL'], format: 'strikethrough' },
+  { tag: ['CODE'], format: 'monospace', attributes: { class: "text-entity-code", dir: 'auto' } },
+  { tag: ['SPAN'], format: 'spoiler', attributes: { class: "spoiler", 'data-entity-type': `${ApiMessageEntityTypes.Spoiler}` } },
+  { tag: ['A'], format: 'link', attributes: { class: 'text-entity-link', dir: 'auto' } }
+];
+
+const getFormatByTag = (tagName: string): keyof ISelectedTextFormats | undefined =>
+  TEXT_FORMATS.find(f => f.tag.includes(tagName))?.format;
+
+const getTagByFormat = (format: keyof ISelectedTextFormats): string =>
+  TEXT_FORMATS.find(f => f.format === format)?.tag[0] || '';
+
+const getAttributesByFormat = (format: keyof ISelectedTextFormats): Record<string, string> =>
+  TEXT_FORMATS.find(f => f.format === format)?.attributes || {};
+
+const MAX_REGRESSION_DEPTH = 50;
+
+/**
+ * Single Letter Processing
+ */
+type SlpChar = {
+  char: string;
+  format: Set<string>;
+  href?: string;
+  img?: {
+    src: string;
+    alt: string;
+    class?: string;
+    draggable?: boolean;
+    'data-document-id'?: string;
+    'data-unique-id'?: string;
+    'data-entity-type'?: string;
+  }
+}
 
 const fragmentEl = document.createElement('div');
 
 const TextFormatter: FC<OwnProps> = ({
   getHtml,
+  setHtml,
   isOpen,
   anchorPosition,
   selectedRange,
@@ -71,10 +110,13 @@ const TextFormatter: FC<OwnProps> = ({
   const { shouldRender, transitionClassNames } = useShowTransitionDeprecated(isOpen);
   const [isLinkControlOpen, openLinkControl, closeLinkControl] = useFlag();
   const [linkUrl, setLinkUrl] = useState('');
-  const [isEditingLink, setIsEditingLink] = useState(false);
   const [inputClassName, setInputClassName] = useState<string | undefined>();
   const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
 
+
+  /**
+   * Update selected text formats
+   */
   const updateFormatState = useLastCallback(() => {
     const newFormats: ISelectedTextFormats = {};
     const selection = window.getSelection();
@@ -87,23 +129,38 @@ const TextFormatter: FC<OwnProps> = ({
 
     const range = selection.getRangeAt(0);
 
-    let node: Node | null = range.commonAncestorContainer;
+    // Look up the formats inside the range
+    const clonedFragment = range.cloneContents();
+    clonedFragment.querySelectorAll('*').forEach((el) => {
+      const tagName = el.tagName; // например, "B", "I" и т.д.
+      const formatKey = getFormatByTag(tagName);
+      if (formatKey && formatKey !== 'image') {
+        newFormats[formatKey] = true;
+      }
+    });
 
+    // Look up the formats in the common ancestor container (if nested as well)
+    let node: Node | null = range.commonAncestorContainer;
     if (node.nodeType === Node.TEXT_NODE) {
       node = node.parentElement;
     }
-  
     while (node && node.nodeType === Node.ELEMENT_NODE) {
       const tagName = (node as HTMLElement).tagName;
-      const formatKey = TEXT_FORMAT_BY_TAG_NAME[tagName];
+      const formatKey = getFormatByTag(tagName);
       if (formatKey) {
         newFormats[formatKey] = true;
       }
       node = (node as HTMLElement).parentElement;
     }
-    console.warn('newFormats', newFormats);
+
     setSelectedTextFormats(newFormats);
   });
+
+  // Update selected text formats on changes (auto updating list, no need to call after each change)
+  useEffect(() => {
+    if (!isOpen || !selectedRange) return
+    updateFormatState();
+  }, [isOpen, selectedRange, openLinkControl, getHtml, updateFormatState]);
 
   useEffect(() => (isOpen ? captureEscKeyListener(onClose) : undefined), [isOpen, onClose]);
   useVirtualBackdrop(
@@ -118,7 +175,6 @@ const TextFormatter: FC<OwnProps> = ({
       linkUrlInputRef.current!.focus();
     } else {
       setLinkUrl('');
-      setIsEditingLink(false);
     }
   }, [isLinkControlOpen]);
 
@@ -130,190 +186,300 @@ const TextFormatter: FC<OwnProps> = ({
     }
   }, [closeLinkControl, shouldRender]);
 
-  useEffect(() => {
-    if (!isOpen || !selectedRange) return
-    updateFormatState();
-  }, [isOpen, selectedRange, openLinkControl, getHtml, updateFormatState]);
+  /**
+   * Handles apply/remove text format
+   * @param range - selected range
+   */
+  const handleFormat = useLastCallback((format: keyof ISelectedTextFormats, attr?: object) => {
+    if (!selectedRange) return;
 
-  const getSelectedText = useLastCallback((shouldDropCustomEmoji?: boolean) => {
-    if (!selectedRange) {
-      return undefined;
-    }
-    fragmentEl.replaceChildren(selectedRange.cloneContents());
-    if (shouldDropCustomEmoji) {
-      fragmentEl.querySelectorAll(INPUT_CUSTOM_EMOJI_SELECTOR).forEach((el) => {
-        el.replaceWith(el.getAttribute('alt')!);
-      });
-    }
-    return fragmentEl.innerHTML;
-  });
+    // Find absolute start and end offsets
+    const startOffset = getAbsoluteRangeOffset(selectedRange, 'start');
+    const endOffset = getAbsoluteRangeOffset(selectedRange, 'end');
 
-  const getSelectedElement = useLastCallback(() => {
-    if (!selectedRange) {
-      return undefined;
-    }
+    // Parse HTML into SLP format
+    const html = getHtml();
+    const slpTextArray = parseHtmlIntoSLFormat(html);
 
-    return selectedRange.commonAncestorContainer.parentElement;
-  });
+    // Add endOffset for every IMG
 
-  function updateInputStyles() {
-    const input = linkUrlInputRef.current;
-    if (!input) {
-      return;
-    }
-
-    const { offsetWidth, scrollWidth, scrollLeft } = input;
-    if (scrollWidth <= offsetWidth) {
-      setInputClassName(undefined);
-      return;
-    }
-
-    let className = '';
-    if (scrollLeft < scrollWidth - offsetWidth) {
-      className = 'mask-right';
-    }
-    if (scrollLeft > 0) {
-      className += ' mask-left';
-    }
-
-    setInputClassName(className);
-  }
-
-  function handleLinkUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setLinkUrl(e.target.value);
-    updateInputStyles();
-  }
-
-  function getFormatButtonClassName(key: keyof ISelectedTextFormats) {
-    if (selectedTextFormats[key]) {
-      return 'active';
-    }
-
-    if (key === 'monospace' || key === 'strikethrough') {
-      if (Object.keys(selectedTextFormats).some(
-        (fKey) => fKey !== key && Boolean(selectedTextFormats[fKey as keyof ISelectedTextFormats]),
-      )) {
-        return 'disabled';
+    // Apply/remove format
+    const tagName = getTagByFormat(format);
+    for (let i = startOffset; i <= endOffset; i++) {
+      const char = slpTextArray[i];
+      if (selectedTextFormats[format]) {
+        char.format.delete(tagName);
+      } else {
+        char.format.add(tagName);
       }
-    } else if (selectedTextFormats.monospace || selectedTextFormats.strikethrough) {
-      return 'disabled';
     }
+    // Convert SLP format to HTML
+    const newHtml = parseSLFormatIntoHtml(slpTextArray, attr);
 
-    return undefined;
-  }
+    const inputDiv = document.getElementById(EDITABLE_INPUT_ID);
+    if (!inputDiv) return;
+    inputDiv.innerHTML = newHtml;
 
-  const handleSpoilerText = useLastCallback(() => {
-    if (selectedTextFormats.spoiler) {
-      const element = getSelectedElement();
-      if (
-        !selectedRange
-        || !element
-        || element.dataset.entityType !== ApiMessageEntityTypes.Spoiler
-        || !element.textContent
-      ) {
+    requestAnimationFrame(() => {
+      const startRange = getOffsetAndContainerByAbsoluteOffset(inputDiv, startOffset);
+      const endRange = getOffsetAndContainerByAbsoluteOffset(inputDiv, endOffset);
+
+      const newRange = document.createRange();
+      newRange.setStart(startRange.container, startRange.offset);
+      newRange.setEnd(endRange.container, endRange.offset + 1);
+
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+      setSelectedRange(newRange);
+      setHtml(inputDiv.innerHTML);
+    });
+  });
+
+  /**
+   * Get absolute offset of range from text input
+   * @param range - selected range
+   * @param type - start or end offset
+   * @returns - absolute offset
+   */
+  const getAbsoluteRangeOffset = useLastCallback((range: Range, type: 'start' | 'end'): number => {
+    let absoluteOffset = type === 'start' ? range.startOffset : range.endOffset;
+    const element = (type === 'start' ? range.startContainer : range.endContainer);
+
+    let regression_depth = 0;
+    const getOffsetFromParent = (node: HTMLElement | null) => {
+      // Prevent infinite recursion
+      regression_depth++;
+      if (regression_depth > MAX_REGRESSION_DEPTH) {
+        console.warn('Max regression depth reached');
         return;
       }
 
-      element.replaceWith(element.textContent);
+      if (!node || (node as HTMLElement).id === EDITABLE_INPUT_ID) {
+        return;
+      }
 
-      return;
+      // Find offset of node from parent
+      const parent = node.parentElement;
+      if (!parent) return;
+      const children = Array.from(parent.childNodes);
+      const index = children.indexOf(node as ChildNode);
+      if (index === -1) return;
+
+      // Calculate offset including all nested children
+      let parentOffset = 0;
+      for (let i = 0; i < index; i++) {
+        const child = children[i] as HTMLElement;
+        if (child.nodeType === Node.TEXT_NODE) {
+          parentOffset += child.textContent?.length || 0;
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          if (child.tagName === 'IMG') {
+            parentOffset += 1;
+          } else {
+            parentOffset += (child as HTMLElement).innerText.length;
+          }
+        }
+      }
+
+      absoluteOffset += parentOffset;
+
+      getOffsetFromParent(parent);
     }
 
-    const text = getSelectedText();
-    document.execCommand(
-      'insertHTML', false, `<span class="spoiler" data-entity-type="${ApiMessageEntityTypes.Spoiler}">${text}</span>`,
-    );
-    onClose();
+    // Find absolute offset from parent
+    getOffsetFromParent(element as HTMLElement);
+
+    return type === 'start' ? absoluteOffset : absoluteOffset - 1;
   });
 
-  const handleBoldText = useLastCallback(() => {
-    // Somehow re-applying 'bold' command to already bold text doesn't work
-    if (selectedTextFormats.bold) {
-      document.execCommand('removeFormat');
-      Object.keys(selectedTextFormats).forEach((key) => {
-        if ((key === 'italic' || key === 'underline') && Boolean(selectedTextFormats[key])) {
-          document.execCommand(key);
+  /**
+   * Get container and offset by absolute offset
+   * @param rootElement - html input element
+   * @param offset - absolute offset (calculated before formatting)
+   * @returns - html container and offset
+   */
+  const getOffsetAndContainerByAbsoluteOffset = (rootElement: HTMLElement, offset: number) => {
+    let currentOffset = 0;
+    let result: { container: Node; offset: number } | null = null;
+
+    const walk = (node: Node) => {
+      if (result) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const length = node.textContent?.length || 0;
+        if (currentOffset <= offset && offset < currentOffset + length) {
+          result = { container: node, offset: offset - currentOffset };
+        }
+        currentOffset += length;
+      } else {
+        const element = node as HTMLElement;
+        if (element.tagName === 'IMG') {
+          currentOffset++;
+        }
+        node.childNodes.forEach(walk);
+      }
+    };
+
+    walk(rootElement);
+    return result || { container: rootElement, offset: 0 };
+  };
+
+  /**
+   * Parse HTML into SLP format
+   * @param html - HTML string
+   * @returns - SLP format array
+   */
+  const parseHtmlIntoSLFormat = useLastCallback((html: string): SlpChar[] => {
+    const parser = new DOMParser();
+    const root = parser.parseFromString(html, 'text/html').body;
+
+    const slpArray: SlpChar[] = [];
+
+    let regression_depth = 0;
+    const getSlfFromNode = (children: ChildNode[], parentFormat: Set<string>) => {
+      // Prevent infinite recursion
+      regression_depth++;
+      if (regression_depth > MAX_REGRESSION_DEPTH) {
+        console.warn('Max regression depth reached');
+        return;
+      }
+
+      // Get children
+      children.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const text = child.textContent || '';
+          const textArray = text.split('');
+          textArray.forEach((char) => {
+            slpArray.push({ char, format: new Set([...parentFormat]) });
+          });
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          const element = child as HTMLElement;
+          const format = element.tagName;
+
+          // Handle emojis
+          if (format === getTagByFormat('image')) {
+            slpArray.push({
+              char: '',
+              format: new Set([...parentFormat, format]),
+              img: {
+                src: element.getAttribute('src') || '',
+                alt: element.getAttribute('alt') || '',
+                class: element.getAttribute('class') || '',
+                draggable: element.getAttribute('draggable') === 'true',
+                'data-document-id': element.getAttribute('data-document-id') || '',
+                'data-unique-id': element.getAttribute('data-unique-id') || '',
+                'data-entity-type': element.getAttribute('data-entity-type') || '',
+              }
+            });
+            return;
+          }
+
+          const formatArray = format ? [format] : [];
+          getSlfFromNode(Array.from(element.childNodes), new Set([...parentFormat, ...formatArray]));
         }
       });
-    } else {
-      document.execCommand('bold');
     }
+
+    getSlfFromNode(Array.from(root.childNodes), new Set());
+    return slpArray;
   });
 
-  const handleItalicText = useLastCallback(() => {
-    document.execCommand('italic');
-  });
+  /**
+   * Parse SLP format into HTML
+   * @param slpArray - SLP format array
+   * @returns - HTML string
+   */
+  const parseSLFormatIntoHtml = useLastCallback((slpArray: SlpChar[], attr?): string => {
+    // Get format length in array
+    const getFormatLength = (format: string, array: SlpChar[]): number => {
+      let length = 0;
+      if (format === 'IMG') return 1;
+      for (let i = 0; i < array.length; i++) {
+        if (array[i].format.has(format)) {
+          length++;
+        } else {
+          break;
+        }
+      }
+      return length;
+    }
 
-  const handleUnderlineText = useLastCallback(() => {
-    document.execCommand('underline');
-  });
+    let regression_depth = 0;
+    const parseSlpArray = (array: SlpChar[], type: string): HTMLElement => {
+      const new_format = getFormatByTag(type);
+      const attributes = getAttributesByFormat(new_format as keyof ISelectedTextFormats);
 
-  const handleStrikethroughText = useLastCallback(() => {
-    if (selectedTextFormats.strikethrough) {
-      const element = getSelectedElement();
-      if (
-        !selectedRange
-        || !element
-        || element.tagName !== 'DEL'
-        || !element.textContent
-      ) {
-        return;
+      // Handle link
+      if (new_format === 'link') {
+        attributes.href = attr?.href || '';
       }
 
-      element.replaceWith(element.textContent);
-      return;
-    }
-
-    const text = getSelectedText();
-    document.execCommand('insertHTML', false, `<del>${text}</del>`);
-    onClose();
-  });
-
-  const handleMonospaceText = useLastCallback(() => {
-    if (selectedTextFormats.monospace) {
-      const element = getSelectedElement();
-      if (
-        !selectedRange
-        || !element
-        || element.tagName !== 'CODE'
-        || !element.textContent
-      ) {
-        return;
+      // Handle image
+      if (new_format === 'image') {
+        const attr = array[0]?.img;
+        const img = document.createElement('img');
+        img.src = attr?.src || '';
+        img.alt = attr?.alt || '';
+        img.className = attr?.class || '';
+        img.draggable = attr?.draggable || false;
+        img.setAttribute('data-document-id', attr?.['data-document-id'] || '');
+        img.setAttribute('data-unique-id', attr?.['data-unique-id'] || '');
+        img.setAttribute('data-entity-type', attr?.['data-entity-type'] || '');
+        return img;
       }
 
-      element.replaceWith(element.textContent);
-      return;
+      const mainEl = document.createElement(type);
+      Object.entries(attributes).forEach(([key, value]) => {
+        mainEl.setAttribute(key, value);
+      });
+
+      // Prevent infinite recursion
+      regression_depth++;
+      if (regression_depth > MAX_REGRESSION_DEPTH) {
+        return mainEl;
+      }
+
+      for (let i = 0; i < array.length; i++) {
+        if (array[i].format.size === 0) {
+          mainEl.appendChild(document.createTextNode(array[i].char));
+        } else {
+          let maxLengthFormat: { format: string, length: number } = { format: '', length: 0 };
+          array[i].format.forEach((format) => {
+            const length = getFormatLength(format, array.slice(i));
+            if (length > maxLengthFormat.length) {
+              maxLengthFormat = { format, length };
+            }
+          });
+
+          // Delete format from elements i -> i + formatLengths[maxFormatLengthId] and parse it
+          const subArray = array.slice(i, i + maxLengthFormat.length)
+          subArray.forEach((el) => el.format.delete(maxLengthFormat.format));
+          const el = parseSlpArray(subArray, maxLengthFormat.format);
+          mainEl.appendChild(el);
+
+          i += maxLengthFormat.length - 1;
+        }
+      }
+
+      return mainEl;
     }
 
-    const text = getSelectedText(true);
-    document.execCommand('insertHTML', false, `<code class="text-entity-code" dir="auto">${text}</code>`);
-    onClose();
+    const el = parseSlpArray(slpArray, 'div');
+    return el.innerHTML;
   });
 
-  const handleLinkUrlConfirm = useLastCallback(() => {
+  const handleBoldText = () => handleFormat('bold');
+  const handleItalicText = () => handleFormat('italic');
+  const handleUnderlineText = () => handleFormat('underline');
+  const handleStrikethroughText = () => handleFormat('strikethrough');
+  const handleMonospaceText = () => handleFormat('monospace');
+  const handleSpoilerText = () => handleFormat('spoiler');
+  const handleLinkText = () => {
     const formattedLinkUrl = (ensureProtocol(linkUrl) || '').split('%').map(encodeURI).join('%');
-
-    if (isEditingLink) {
-      const element = getSelectedElement();
-      if (!element || element.tagName !== 'A') {
-        return;
-      }
-
-      (element as HTMLAnchorElement).href = formattedLinkUrl;
-
-      onClose();
-
-      return;
-    }
-
-    const text = getSelectedText(true);
-    document.execCommand(
-      'insertHTML',
-      false,
-      `<a href=${formattedLinkUrl} class="text-entity-link" dir="auto">${text}</a>`,
-    );
-    onClose();
-  });
+    handleFormat('link', { href: formattedLinkUrl });
+    closeLinkControl();
+  }
 
   const handleKeyDown = useLastCallback((e: KeyboardEvent) => {
     const HANDLERS_BY_KEY: Record<string, AnyToVoidFunction> = {
@@ -353,7 +519,7 @@ const TextFormatter: FC<OwnProps> = ({
 
   function handleContainerKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Enter' && isLinkControlOpen) {
-      handleLinkUrlConfirm();
+      handleLinkText();
       e.preventDefault();
     }
   }
@@ -376,6 +542,26 @@ const TextFormatter: FC<OwnProps> = ({
   const style = anchorPosition
     ? `left: ${anchorPosition.x}px; top: ${anchorPosition.y}px;--text-formatter-left: ${anchorPosition.x}px;`
     : '';
+
+  const getFormatButtonClassName = (key: keyof ISelectedTextFormats) => {
+    if (selectedTextFormats[key]) {
+      return 'active';
+    }
+
+    // With new approach, appling formating is not an issue for strike and monospace
+    // However, monospace is not working properly with link (onClick text is being copy only) and with bold (<b> applied but not displayed)
+    if (key === 'monospace') {
+      if (Object.keys(selectedTextFormats).some(
+        (fKey) => fKey !== key && Boolean(selectedTextFormats[fKey as keyof ISelectedTextFormats]),
+      )) {
+        return 'disabled';
+      }
+    } else if (selectedTextFormats.monospace) {
+      return 'disabled';
+    }
+
+    return undefined;
+  }
 
   return (
     <div
@@ -437,7 +623,12 @@ const TextFormatter: FC<OwnProps> = ({
           <Icon name="monospace" />
         </Button>
         <div className="TextFormatter-divider" />
-        <Button color="translucent" ariaLabel={lang('TextFormat.AddLinkTitle')} onClick={openLinkControl}>
+        <Button
+          className={getFormatButtonClassName('link')}
+          color="translucent"
+          ariaLabel={lang('TextFormat.AddLinkTitle')}
+          onClick={() => { selectedTextFormats.link ? handleFormat('link') : openLinkControl() }}
+        >
           <Icon name="link" />
         </Button>
       </div>
@@ -461,8 +652,7 @@ const TextFormatter: FC<OwnProps> = ({
               autoComplete="off"
               inputMode="url"
               dir="auto"
-              onChange={handleLinkUrlChange}
-              onScroll={updateInputStyles}
+              onChange={(e) => setLinkUrl(e.target.value)}
             />
           </div>
 
@@ -471,8 +661,8 @@ const TextFormatter: FC<OwnProps> = ({
             <Button
               color="translucent"
               ariaLabel={lang('Save')}
-              className="color-primary"
-              onClick={handleLinkUrlConfirm}
+              className={"color-primary"}
+              onClick={handleLinkText}
             >
               <Icon name="check" />
             </Button>
