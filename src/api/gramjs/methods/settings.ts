@@ -184,19 +184,27 @@ export async function fetchWallpapers() {
     if (
       !(wallpaper instanceof GramJs.WallPaper)
       || !(wallpaper.document instanceof GramJs.Document)
+      || wallpaper.className !== "WallPaper"
     ) {
       return false;
     }
 
-    return !wallpaper.pattern && wallpaper.document.mimeType !== 'application/x-tgwallpattern';
+    return true;
   }) as GramJs.WallPaper[];
 
   filteredWallpapers.forEach((wallpaper) => {
     localDb.documents[String(wallpaper.document.id)] = wallpaper.document as GramJs.Document;
   });
 
+  const res = filteredWallpapers.map(buildApiWallpaper).filter(Boolean);
+
+  // filter unique by 'slug' (slug is not unique in the API) and sort (pattern first)
+  const uniqueWallpapers = res
+    .filter((v, i, a) => a.findIndex((t) => (t.slug === v.slug)) === i)
+    .sort((a, b) => a.pattern && !b.pattern ? -1 : 1);
+
   return {
-    wallpapers: filteredWallpapers.map(buildApiWallpaper).filter(Boolean),
+    wallpapers: uniqueWallpapers,
   };
 }
 

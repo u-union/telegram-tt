@@ -65,6 +65,21 @@ export interface ApiAttachment {
 export interface ApiWallpaper {
   slug: string;
   document: ApiDocument;
+  dark?: boolean;
+  pattern?: boolean;
+  settings?: WallPaperSettings;
+}
+
+export interface WallPaperSettings {
+  blur?: true;
+  motion?: true;
+  backgroundColor?: number;
+  secondBackgroundColor?: number;
+  thirdBackgroundColor?: number;
+  fourthBackgroundColor?: number;
+  intensity?: number;
+  rotation?: number;
+  emoticon?: string;
 }
 
 export interface ApiSession {

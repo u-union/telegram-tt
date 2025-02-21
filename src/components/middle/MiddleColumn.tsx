@@ -5,7 +5,7 @@ import React, {
 import { getActions, withGlobal } from '../../global';
 
 import type {
-  ApiChat, ApiChatBannedRights, ApiInputMessageReplyInfo, ApiTopic,
+  ApiChat, ApiChatBannedRights, ApiInputMessageReplyInfo, ApiTopic
 } from '../../api/types';
 import type {
   ActiveEmojiInteraction,
@@ -84,7 +84,9 @@ import PrivacySettingsNoticeModal from '../common/PrivacySettingsNoticeModal.asy
 import SeenByModal from '../common/SeenByModal.async';
 import UnpinAllMessagesModal from '../common/UnpinAllMessagesModal.async';
 import Button from '../ui/Button';
+import Loading from '../ui/Loading';
 import Transition from '../ui/Transition';
+import WallpaperPatternRenderer from '../ui/WallpaperPatternRenderer';
 import ChatLanguageModal from './ChatLanguageModal.async';
 import { DropAreaState } from './composer/DropArea';
 import EmojiInteractionAnimation from './EmojiInteractionAnimation.async';
@@ -122,9 +124,13 @@ type StateProps = {
   customBackground?: string;
   backgroundColor?: string;
   patternColor?: string;
+  isPatternWallpaper?: boolean;
+  isPatternDark?: boolean;
+  patternWallpaperColors?: string;
+  blurSize?: number;
+  patternScale?: number;
   isLeftColumnShown?: boolean;
   isRightColumnShown?: boolean;
-  isBackgroundBlurred?: boolean;
   leftColumnWidth?: number;
   hasActiveMiddleSearch?: boolean;
   isSelectModeActive?: boolean;
@@ -182,9 +188,13 @@ function MiddleColumn({
   theme,
   backgroundColor,
   patternColor,
+  isPatternWallpaper,
+  isPatternDark,
+  patternWallpaperColors,
+  patternScale,
   isLeftColumnShown,
   isRightColumnShown,
-  isBackgroundBlurred,
+  blurSize,
   leftColumnWidth,
   hasActiveMiddleSearch,
   isSelectModeActive,
@@ -412,7 +422,7 @@ function MiddleColumn({
     unblockUser({ userId: chatId! });
   });
 
-  const customBackgroundValue = useCustomBackground(theme, customBackground);
+  const customBackgroundValue = useCustomBackground(theme, customBackground, isPatternWallpaper, isPatternDark, patternScale);
 
   const className = buildClassName(
     MASK_IMAGE_DISABLED ? 'mask-image-disabled' : 'mask-image-enabled',
@@ -423,9 +433,10 @@ function MiddleColumn({
     styles.withTransition,
     customBackground && styles.customBgImage,
     backgroundColor && styles.customBgColor,
-    customBackground && isBackgroundBlurred && styles.blurred,
     isRightColumnShown && styles.withRightColumn,
     IS_ELECTRON && !(renderingChatId && renderingThreadId) && styles.draggable,
+    isPatternWallpaper && 'is-pattern',
+    isPatternDark && 'is-dark',
   );
 
   const messagingDisabledClassName = buildClassName(
@@ -485,6 +496,7 @@ function MiddleColumn({
         `--composer-translate-x: ${composerTranslateX}px`,
         `--toolbar-translate-x: ${toolbarTranslateX}px`,
         `--pattern-color: ${patternColor}`,
+        `--blur-size: ${Math.sqrt((blurSize || 0))}px`,
         backgroundColor && `--theme-background-color: ${backgroundColor}`,
       )}
       onClick={(isTablet && isLeftColumnShown) ? handleTabletFocus : undefined}
@@ -497,10 +509,20 @@ function MiddleColumn({
           onDoubleClick={resetResize}
         />
       )}
+
+      {customBackgroundValue && customBackground && isPatternWallpaper && patternWallpaperColors && (
+        <WallpaperPatternRenderer
+          slug={customBackground}
+          colors={patternWallpaperColors}
+          isBackground
+        />
+      )}
       <div
         className={bgClassName}
-        style={customBackgroundValue ? `--custom-background: ${customBackgroundValue}` : undefined}
+        style={customBackgroundValue ? `--custom-background: ${customBackgroundValue};` : undefined}
       />
+      {customBackground && !customBackgroundValue?.startsWith('url') && <Loading color="white" className="bg_spinner" />}
+
       <div id="middle-column-portals" />
       {Boolean(renderingChatId && renderingThreadId) && (
         <>
@@ -599,18 +621,18 @@ function MiddleColumn({
                 {(
                   isMobile && (renderingCanSubscribe || (renderingShouldJoinToSend && !renderingShouldSendJoinRequest))
                 ) && (
-                  <div className="middle-column-footer-button-container" dir={lang.isRtl ? 'rtl' : undefined}>
-                    <Button
-                      size="tiny"
-                      fluid
-                      ripple
-                      className="composer-button join-subscribe-button"
-                      onClick={handleSubscribeClick}
-                    >
-                      {lang(renderingIsChannel ? 'ProfileJoinChannel' : 'ProfileJoinGroup')}
-                    </Button>
-                  </div>
-                )}
+                    <div className="middle-column-footer-button-container" dir={lang.isRtl ? 'rtl' : undefined}>
+                      <Button
+                        size="tiny"
+                        fluid
+                        ripple
+                        className="composer-button join-subscribe-button"
+                        onClick={handleSubscribeClick}
+                      >
+                        {lang(renderingIsChannel ? 'ProfileJoinChannel' : 'ProfileJoinGroup')}
+                      </Button>
+                    </div>
+                  )}
                 {isMobile && renderingShouldSendJoinRequest && (
                   <div className="middle-column-footer-button-container" dir={lang.isRtl ? 'rtl' : undefined}>
                     <Button
@@ -710,7 +732,13 @@ export default memo(withGlobal<OwnProps>(
   (global, { isMobile }): StateProps => {
     const theme = selectTheme(global);
     const {
-      isBlurred: isBackgroundBlurred, background: customBackground, backgroundColor, patternColor,
+      blurSize: blurSize,
+      background: customBackground,
+      backgroundColor, patternColor,
+      isPattern: isPatternWallpaper,
+      colors: patternWallpaperColors,
+      isDark: isPatternDark,
+      scale: patternScale,
     } = global.settings.themes[theme] || {};
 
     const {
@@ -724,11 +752,15 @@ export default memo(withGlobal<OwnProps>(
     const state: StateProps = {
       theme,
       customBackground,
+      isPatternWallpaper,
+      patternWallpaperColors,
       backgroundColor,
       patternColor,
       isLeftColumnShown,
       isRightColumnShown: selectIsRightColumnShown(global, isMobile),
-      isBackgroundBlurred,
+      blurSize,
+      isPatternDark,
+      patternScale,
       hasActiveMiddleSearch: Boolean(selectCurrentMiddleSearch(global)),
       isSelectModeActive: selectIsInSelectMode(global),
       isSeenByModalOpen: Boolean(seenByModal),
@@ -784,7 +816,7 @@ export default memo(withGlobal<OwnProps>(
     const canUnpin = chat && (
       isPrivate || (
         chat?.isCreator || (!isChannel && !isUserRightBanned(chat, 'pinMessages'))
-          || getHasAdminRight(chat, 'pinMessages')
+        || getHasAdminRight(chat, 'pinMessages')
       )
     );
 

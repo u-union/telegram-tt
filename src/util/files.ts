@@ -1,3 +1,4 @@
+import pako from 'pako';
 import { CONTENT_TYPES_WITH_PREVIEW } from '../config';
 import { pause } from './schedulers';
 
@@ -49,7 +50,7 @@ export function blobToFile(blob: Blob, fileName: string) {
 export function preloadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
+    img.complete ? resolve(img) : img.onload = () => resolve(img); // fix when image is cached
     img.onerror = reject;
     img.src = url;
   });
@@ -135,4 +136,42 @@ function fixMovMime(file: File) {
     return new File([file], file.name, { type: 'video/quicktime' });
   }
   return file;
+}
+
+export const uncompressTGV = async (blob: Blob): Promise<Blob> => {
+  const buffer = await blob.arrayBuffer();
+  let newBuffer;
+  if (false) { // isFirefox -> when imported, app crashes
+    const text = fixFirefoxSvg(gzipUncompress(buffer, true) as string);
+    const textEncoder = new TextEncoder();
+    newBuffer = textEncoder.encode(text);
+  } else {
+    newBuffer = gzipUncompress(buffer, false) as Uint8Array;
+  }
+
+  return new Blob([newBuffer], { type: 'image/svg+xml' });
+};
+
+function fixFirefoxSvg(text: string) {
+  const svgIndex = text.indexOf('<svg');
+  if (svgIndex !== 0) {
+    text = text.slice(svgIndex);
+  }
+
+  const match = text.match(/viewBox="(.+?)"/);
+  if (!match) {
+    throw new Error('viewBox attribute not found in SVG text');
+  }
+  const parts = match[1].split(' ');
+  if (parts.length !== 4) {
+    throw new Error('Unexpected viewBox format');
+  }
+  const [_, __, width, height] = parts;
+  text = text.replace(/>/, ` width="${width}" height="${height}">`).replace(/[^\x00-\x7F]/g, '');
+  return text;
+}
+
+function gzipUncompress(bytes: ArrayBuffer, toString?: boolean): string | Uint8Array {
+  const result = pako.inflate(bytes, toString ? {to: 'string'} : undefined);
+  return result;
 }
