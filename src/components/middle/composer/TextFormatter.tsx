@@ -62,7 +62,7 @@ const TEXT_FORMATS: TextFormatMapping[] = [
   { tag: ['CODE'], format: 'monospace', attributes: { class: "text-entity-code", dir: 'auto' } },
   { tag: ['SPAN'], format: 'spoiler', attributes: { class: "spoiler", 'data-entity-type': `${ApiMessageEntityTypes.Spoiler}` } },
   { tag: ['A'], format: 'link', attributes: { class: 'text-entity-link', dir: 'auto' } },
-  { tag: ['BLOCKQUOTE'], format: 'quote', attributes: { class: "text-entity-quote", dir: 'auto' } },
+  { tag: ['BLOCKQUOTE'], format: 'quote', attributes: { 'data-can-collapse': "false" } },
 ];
 
 const getFormatByTag = (tagName: string): keyof ISelectedTextFormats | undefined =>
