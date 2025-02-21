@@ -69,7 +69,6 @@ type OwnProps = {
   onInputHtmlUndo?: () => boolean;
   onInputHtmlRedo?: () => boolean;
   onMessageSend: NoneToVoidFunction;
-  // onScroll?: (event: React.UIEvent<HTMLElement>) => void;
   onInputBoxFocus?: NoneToVoidFunction;
   onInputBoxBlur?: NoneToVoidFunction;
 };
@@ -126,12 +125,12 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const isAttachmentModalInput = type === 'caption';
   const isActive = isAttachmentModalInput === hasAttachments;
   const isNeedPremiumInStory = isStoryInput && isNeedPremium;
-  
+
   const { isMobile } = useAppLayout();
   const isMobileDevice = !!isMobile && (IS_IOS || IS_ANDROID);
   const maxInputHeight = isAttachmentModalInput
-  ? MAX_ATTACHMENT_MODAL_INPUT_HEIGHT
-  : isStoryInput ? MAX_STORY_MODAL_INPUT_HEIGHT : (isMobile ? 256 : 416);
+    ? MAX_ATTACHMENT_MODAL_INPUT_HEIGHT
+    : isStoryInput ? MAX_STORY_MODAL_INPUT_HEIGHT : (isMobile ? 256 : 416);
 
   // Selection / Text Formatter
   const [selectedRange, setSelectedRange] = useState<Range>();
@@ -187,7 +186,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       isTouched && 'touched',
     );
   }, [getHtmlInputText, hasAttachments, isActive]);
-  
+
   const inputPlaceholderClass = buildClassName(
     'placeholder-text',
     !isAttachmentModalInput && !canSendPlainText && 'with-icon',
@@ -202,7 +201,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     requestMeasure(() => {
       // Get the input scroller element (closest to current input element)
       const inputScroller = inputRef.current?.closest<HTMLDivElement>(`.${INPUT_SCROLLER_CLASS}`);
-      if (!inputScroller)  return;
+      if (!inputScroller) return;
       // Get the current height of the input scroller
       const currentHeight = Number(inputScroller.style.height.replace('px', ''));
       // Get the scroll height of the input element
@@ -211,7 +210,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       const newHeight = Math.min(scrollHeight, maxInputHeight);
       if (newHeight === currentHeight) return;
       const isOverflown = scrollHeight > maxInputHeight
-  
+
       // Mutation phase: update height and transition time
       requestMutation(() => {
         const transitionDuration = Math.round(
@@ -226,14 +225,14 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
 
   /**
    * Initialize the scroller input height with offsetHeigth
-   * @fix at first height change, transition is not working
+   * is a @fix - at first height change, transition is not working
    */
   useLayoutEffect(() => {
     requestMeasure(() => {
       const height = inputBoxCloneRef.current?.offsetHeight;
       const inputScroller = inputRef.current?.closest<HTMLDivElement>(`.${INPUT_SCROLLER_CLASS}`);
       if (!inputScroller || !height) return;
-      
+
       requestMutation(() => {
         inputScroller.style.height = `${height}px`;
       });
@@ -370,14 +369,14 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         // Undo (Ctrl/Cmd+Z)
         else if (key.toLowerCase() === 'z') {
           if (onInputHtmlUndo?.()) {
-            shakeElement(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current);id
+            shakeElement(getHtmlInputText() ? inputRef?.current : inputBoxPlaceholderRef?.current); id
           }
         }
         return;
       }
 
       // Handle ctrl/meta + ArrowUp/ArrowDown shortcuts for reply message navigation.
-      if (!inputHTML && (metaKey || ctrlKey ) && (key === 'ArrowUp' || key === 'ArrowDown')) {
+      if (!inputHTML && (metaKey || ctrlKey) && (key === 'ArrowUp' || key === 'ArrowDown')) {
         const targetIndexDelta = key === 'ArrowDown' ? 1 : -1;
         replyToNextMessage({ targetIndexDelta });
         e.preventDefault();
@@ -412,12 +411,35 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   const handleInputBoxMouseDown = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const { button } = e;
-    
+
     if (button === 0) {
       // Check if need to display/hide text formatter
-      const listenerEl = e.currentTarget.closest(`.${INPUT_WRAPPER_CLASS}`) || e.target;
-      listenerEl.addEventListener('mouseup', debouncedHandleTextFormatterDisplay, { once: true });
+      addEventListener('mouseup', debouncedHandleTextFormatterDisplay, { once: true });
     }
+  });
+
+  /**
+   * Check if text is selected and valid for text formatter
+   * @returns boolean
+   */
+  const isTextSelected = useLastCallback(() => {
+    const selection = window.getSelection();
+    const selectionRange = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
+    const selectedText = selectionRange?.toString().trim();
+
+    if (
+      !selectionRange // No selection
+      || !isSelectionInsideInput(selectionRange, editableInputId) // Selection outside the input
+      || !selectionRange.START_TO_END // Selection is collapsed
+      || !selectedText // No text selected
+      || parseEmojiOnlyString(selectedText) // Only emojis selected
+    ) {
+      requestMutation(() => {
+        hideTextFormatter();
+      });
+      return false;
+    }
+    return true;
   });
 
   /**
@@ -425,27 +447,15 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   const handleTextFormatterDisplay = useLastCallback(() => {
     requestMeasure(() => {
+      if (!isTextSelected()) return false;
+      
       const selection = window.getSelection();
       const selectionRange = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
-      const selectedText = selectionRange?.toString().trim();
-
-      if (
-        !selectionRange // No selection
-        || !isSelectionInsideInput(selectionRange, editableInputId) // Selection outside the input
-        || !selectionRange.START_TO_END // Selection is collapsed
-        || !selectedText // No text selected
-        || parseEmojiOnlyString(selectedText) // Only emojis selected
-      ) {
-        requestMutation(() => {
-          hideTextFormatter();
-        });
-        return;
-      }
 
       /** Calculate the position of the text formatter */
-      const selectionRect = selectionRange.getBoundingClientRect();
+      const selectionRect = selectionRange?.getBoundingClientRect();
       const scrollerElement = inputRef.current!.closest<HTMLDivElement>(`.${INPUT_SCROLLER_CLASS}`);
-      if (!scrollerElement) return;
+      if (!scrollerElement || !selectionRect) return false;
       const scrollerRect = scrollerElement.getBoundingClientRect();
 
       let x = (selectionRect.left + selectionRect.width / 2) - scrollerRect.left;
@@ -458,7 +468,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       /** Set the anchor position and selected text, then display the text formatter */
       requestMutation(() => {
         setTextFormatterAnchorPosition({ x, y: selectionRect.top - scrollerRect.top });
-        setSelectedRange(selectionRange);
+        setSelectedRange(selectionRange || undefined);
         displayTextFormatter();
       });
     });
@@ -467,31 +477,36 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const debouncedHandleTextFormatterDisplay = debounce(handleTextFormatterDisplay, SELECTION_RECALCULATE_DELAY_MS, false);
 
 
+  // Handle the Android Context Menu when text is selected
+  const handleAndroidContextMenu = useLastCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (!isTextSelected()) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    handleTextFormatterDisplay();
+  });
+
   return (
     <div id={id} className={messageInputClass} onClick={handleMessageInputClick}>
-      <div
-        className={inputScrollerClass}
-        // onScroll={onScroll} // Only used by attachments modal (check how to handle this)
-      >
+      <div className={inputScrollerClass} >
         <div className={inputScrollerContentClass}>
           <div
-          className={inputBoxClass}
-          id={editableInputId}
-          aria-label={placeholder}
-          ref={inputRef}
-          role="textbox"
-          dir='auto'
-          contentEditable={isAttachmentModalInput || canSendPlainText}
-          onChange={handleInputBoxChange}
-          onKeyDown={handleInputBoxKeyDown}
-          onMouseDown={handleInputBoxMouseDown}
-          // TODO: handle android context menu and selection
-          // onContextMenu={IS_ANDROID ? handleAndroidContextMenu : undefined}
-          // onTouchCancel={IS_ANDROID ? processSelectionWithTimeout : undefined}
-          onFocus={!isNeedPremiumInStory ? onInputBoxFocus : undefined}
-          onBlur={!isNeedPremiumInStory ? onInputBoxBlur : undefined}
+            className={inputBoxClass}
+            id={editableInputId}
+            aria-label={placeholder}
+            ref={inputRef}
+            role="textbox"
+            dir='auto'
+            contentEditable={isAttachmentModalInput || canSendPlainText}
+            onChange={handleInputBoxChange}
+            onKeyDown={handleInputBoxKeyDown}
+            onMouseDown={handleInputBoxMouseDown}
+            onContextMenu={IS_ANDROID ? handleAndroidContextMenu : undefined}
+            onTouchCancel={IS_ANDROID ? debouncedHandleTextFormatterDisplay : undefined}
+            onFocus={!isNeedPremiumInStory ? onInputBoxFocus : undefined}
+            onBlur={!isNeedPremiumInStory ? onInputBoxBlur : undefined}
           />
-{          !forcedPlaceholder && (<span
+          {!forcedPlaceholder && (<span
             ref={inputBoxPlaceholderRef}
             className={inputPlaceholderClass}
             dir="auto"
@@ -507,9 +522,9 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
               </Button>
             )}
           </span>)}
-          <canvas ref={sharedCanvasRef} className="shared-canvas"/>
-          <canvas ref={sharedCanvasHqRef} className="shared-canvas"/>
-          <div ref={absoluteContainerRef} className="absolute-video-container"/>
+          <canvas ref={sharedCanvasRef} className="shared-canvas" />
+          <canvas ref={sharedCanvasHqRef} className="shared-canvas" />
+          <div ref={absoluteContainerRef} className="absolute-video-container" />
         </div>
       </div>
       <div ref={inputScrollerCloneRef} className={buildClassName(inputScrollerClass, 'clone')}>
@@ -528,7 +543,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         anchorPosition={textFormatterAnchorPosition}
         selectedRange={selectedRange}
         setSelectedRange={setSelectedRange}
-        onClose={() => {hideTextFormatter(); removeAllSelections();}}
+        onClose={() => { hideTextFormatter(); removeAllSelections(); }}
       />
       {forcedPlaceholder && <span className="forced-placeholder">{renderText(forcedPlaceholder!)}</span>}
     </div>

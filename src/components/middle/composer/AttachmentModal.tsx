@@ -190,8 +190,6 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
     isAtEnd: areAttachmentsScrolledToBottom,
   } = useScrolledState();
 
-  const { handleScroll: handleCaptionScroll, isAtBeginning: isCaptionNotScrolled } = useScrolledState();
-
   const isOpen = Boolean(attachments.length);
   const renderingIsOpen = Boolean(renderingAttachments?.length);
   const [isHovered, markHovered, unmarkHovered] = useFlag();
@@ -580,8 +578,6 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
     );
   }
 
-  const isBottomDividerShown = !areAttachmentsScrolledToBottom || !isCaptionNotScrolled;
-
   return (
     <Modal
       isOpen={isOpen}
@@ -614,7 +610,6 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
           className={buildClassName(
             styles.attachments,
             'custom-scroll',
-            isBottomDividerShown && styles.attachmentsBottomPadding,
           )}
           onScroll={handleAttachmentsScroll}
         >
@@ -631,12 +626,7 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
             />
           ))}
         </div>
-        <div
-          className={buildClassName(
-            styles.captionWrapper,
-            isBottomDividerShown && styles.captionTopBorder,
-          )}
-        >
+        <div className={buildClassName(styles.captionWrapper)}>
           <MentionTooltip
             isOpen={isMentionTooltipOpen}
             filteredUsers={mentionFilteredUsers}
@@ -692,7 +682,6 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
               placeholder={lang('AddCaption')}
               onMessageSend={handleSendClick}
               onInputHtmlChange={onInputHtmlChange}
-              // onScroll={handleCaptionScroll}
               canAutoFocus={Boolean(isReady && isForCurrentMessageList && isOpen)}
               captionLimit={leftChars}
               onInputHtmlRedo={onInputHtmlRedo}

@@ -47,8 +47,7 @@
     }
 
     .mobile-symbol-menu-button {
-      margin-left: 0 !important;
-      margin-right: -1.25rem !important;
+      padding: 1.7rem;
       width: 2.875rem;
       height: 2.875rem;
     }
@@ -103,10 +102,6 @@
   }
 }
 
-.attachments-bottom-padding {
-  padding-bottom: 0.5rem;
-}
-
 .caption-wrapper {
   position: relative;
   padding: 0.25rem 0.5rem;
@@ -124,10 +119,6 @@
       z-index: 0;
     }
   }
-}
-
-.caption-top-border {
-  border-top-color: var(--color-borders);
 }
 
 .caption {
