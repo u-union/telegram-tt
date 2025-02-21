@@ -975,7 +975,7 @@ const Composer: FC<OwnProps & StateProps> = ({
       return;
     }
 
-    const { text, entities } = parseHtmlAsFormattedText(getHtml());
+    const { text, entities } = parseHtmlAsFormattedTextNew(getHtml());
     if (!text && !attachmentsToSend.length) {
       return;
     }
@@ -1557,7 +1557,7 @@ const Composer: FC<OwnProps & StateProps> = ({
         showCustomEmojiPremiumNotification();
         return;
       }
-      const customEmojiMessage = parseHtmlAsFormattedText(buildCustomEmojiHtml(sticker));
+      const customEmojiMessage = parseHtmlAsFormattedTextNew(buildCustomEmojiHtml(sticker));
       text = customEmojiMessage.text;
       entities = customEmojiMessage.entities;
     }

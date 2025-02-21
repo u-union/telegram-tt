@@ -674,7 +674,6 @@ const AttachmentModal: FC<OwnProps & StateProps> = ({
               inputRef={inputRef}
               chatId={chatId}
               threadId={threadId}
-              // customEmojiPrefix="attachment"
               isReady={isReady}
               hasAttachments={isOpen}
               getHtmlInputText={getHtml}

@@ -6,13 +6,11 @@ import React, {
 import type { IAnchorPosition } from '../../../types';
 import { ApiMessageEntityTypes } from '../../../api/types';
 
-import { EDITABLE_INPUT_ID } from '../../../config';
 import buildClassName from '../../../util/buildClassName';
 import captureEscKeyListener from '../../../util/captureEscKeyListener';
 import { ensureProtocol } from '../../../util/ensureProtocol';
 import getKeyFromEvent from '../../../util/getKeyFromEvent';
 import stopEvent from '../../../util/stopEvent';
-import { INPUT_CUSTOM_EMOJI_SELECTOR } from './helpers/customEmoji';
 
 import useFlag from '../../../hooks/useFlag';
 import useLastCallback from '../../../hooks/useLastCallback';
@@ -28,6 +26,7 @@ import './TextFormatter.scss';
 export type OwnProps = {
   getHtml: () => string;
   setHtml: (html: string) => void;
+  editableInputId: string;
   isOpen: boolean;
   anchorPosition?: IAnchorPosition;
   selectedRange?: Range;
@@ -99,6 +98,7 @@ const fragmentEl = document.createElement('div');
 const TextFormatter: FC<OwnProps> = ({
   getHtml,
   setHtml,
+  editableInputId,
   isOpen,
   anchorPosition,
   selectedRange,
@@ -218,7 +218,7 @@ const TextFormatter: FC<OwnProps> = ({
     // Convert SLP format to HTML
     const newHtml = parseSLFormatIntoHtml(slpTextArray, attr);
 
-    const inputDiv = document.getElementById(EDITABLE_INPUT_ID);
+    const inputDiv = document.getElementById(editableInputId);
     if (!inputDiv) return;
     inputDiv.innerHTML = newHtml;
 
@@ -259,7 +259,7 @@ const TextFormatter: FC<OwnProps> = ({
         return;
       }
 
-      if (!node || (node as HTMLElement).id === EDITABLE_INPUT_ID) {
+      if (!node || (node as HTMLElement).id === editableInputId) {
         return;
       }
 

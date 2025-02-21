@@ -331,12 +331,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         focusOnInputBox();
       }
     } else {
-      // Decode the HTML to text
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = innerHTML;
-      const decodedHtml = tempDiv.textContent || '';
-
-      onInputHtmlChange(decodedHtml);
+      onInputHtmlChange(innerHTML);
     }
   });
 
@@ -465,10 +460,11 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       } else if (x > scrollerRect.width - TEXT_FORMATTER_SAFE_AREA_PX) {
         x = scrollerRect.width - TEXT_FORMATTER_SAFE_AREA_PX;
       }
+      const y = Math.max(selectionRect.top - scrollerRect.top, 0)
 
       /** Set the anchor position and selected text, then display the text formatter */
       requestMutation(() => {
-        setTextFormatterAnchorPosition({ x, y: selectionRect.top - scrollerRect.top });
+        setTextFormatterAnchorPosition({ x, y});
         setSelectedRange(selectionRange || undefined);
         displayTextFormatter();
       });
@@ -541,6 +537,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       <TextFormatter
         getHtml={getHtmlInputText}
         setHtml={onInputHtmlChange}
+        editableInputId={editableInputId}
         isOpen={isTextFormatterOpen}
         anchorPosition={textFormatterAnchorPosition}
         selectedRange={selectedRange}

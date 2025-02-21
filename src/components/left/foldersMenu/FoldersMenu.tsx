@@ -7,7 +7,6 @@ import { selectCanShareFolder } from "../../../global/selectors";
 
 import type { ApiChatFolder, ApiChatlistExportedInvite } from '../../../api/types';
 import { LeftColumnContent } from "../../../types";
-import { IconName } from "../../../types/icons";
 
 import useAppLayout from "../../../hooks/useAppLayout";
 import useFlag from "../../../hooks/useFlag";

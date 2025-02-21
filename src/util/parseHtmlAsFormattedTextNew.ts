@@ -73,6 +73,7 @@ export default function parseHtmlAsFormattedTextNew(
 ): ApiFormattedText {  
   console.warn('--------------------------------------------');
   console.warn('html:', html);
+
   // Clean up the HTML and convert markdown links to HTML links
   html = preprocessText(html, withMarkdownLinks);
   console.warn('processedhtml:', html);
@@ -83,6 +84,12 @@ export default function parseHtmlAsFormattedTextNew(
   // Process the tree to create the formatted text for API
   const formattedText = convertTreeToFormattedText(tree);
   console.warn('formattedText:', formattedText);
+
+  // Create a fragment to get the inner text
+  const fragment = document.createElement('div');
+  fragment.innerHTML = formattedText.text;
+  formattedText.text = fragment.innerText.trim().replace(/\u200b+/g, '');
+  console.warn('fragment:', fragment);
   return formattedText;
 }
 

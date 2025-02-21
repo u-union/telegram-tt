@@ -52,6 +52,12 @@ const SettingsFolders: FC<OwnProps> = ({
   const [currentFolderDetails, setCurrentFolderDetails] = useState<FolderDetails>({ data: 'folder-badge', type: 'icon' });
   const [currentFolderId, setCurrentFolderId] = useState<number | undefined>(undefined);
 
+  // Temp onReset to also delete emoji/icon data from local storage
+  const _onReset = useLastCallback(() => {
+    saveFolderDetails(currentFolderId!, { data: 'folder-badge', type: 'icon' });
+    onReset();
+  });
+
   // Initial load of folder details (in case of edit state)
   useEffect(() => {
     if (state.folderId) {
@@ -60,8 +66,7 @@ const SettingsFolders: FC<OwnProps> = ({
         setCurrentFolderDetails(folderDetails);
       }
     }
-  }
-    , []);
+  }, []);
 
   const handleReset = useLastCallback(() => {
     if (
@@ -88,7 +93,7 @@ const SettingsFolders: FC<OwnProps> = ({
       return;
     }
 
-    onReset();
+    _onReset();
   });
 
   const isCreating = state.mode === 'create';
@@ -187,7 +192,7 @@ const SettingsFolders: FC<OwnProps> = ({
             SettingsScreens.FoldersIncludedChats,
             SettingsScreens.FoldersExcludedChats,
           ].includes(shownScreen)}
-          onReset={onReset}
+          onReset={_onReset}
         />
       );
     case SettingsScreens.FoldersCreateFolder:
