@@ -360,7 +360,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const handleInputBoxKeyDown = useLastCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const { isComposing, key, ctrlKey, altKey, metaKey, shiftKey } = e
     const inputHTML = getHtmlInputText();
-
+    
     if (!isComposing) {
       // Handle Ctrl/Cmd + Z/Y for undo/redo
       if ((ctrlKey || metaKey) && (key.toLowerCase() === 'z' || key.toLowerCase() === 'y')) {

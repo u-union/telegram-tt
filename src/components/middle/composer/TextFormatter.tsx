@@ -203,8 +203,8 @@ const TextFormatter: FC<OwnProps> = ({
     const html = getHtml();
     const slpTextArray = parseHtmlIntoSLFormat(html);
 
-    if (slpTextArray.length === 0 || slpTextArray.length !== endOffset + 1 - startOffset) {
-      console.warn('Error while parsing HTML into SLP format');
+    if (slpTextArray.length === 0 || endOffset >= slpTextArray.length) {
+      console.error('Error while parsing HTML into SLP format, SLP array:', slpTextArray, '. Selection start:', startOffset, 'end:', endOffset);
       return;
     }
 
