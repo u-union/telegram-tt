@@ -56,12 +56,14 @@ import { callApi, cancelApiProgress } from '../../../api/gramjs';
 import {
   getIsSavedDialog,
   getUserFullName,
+  isChatAdmin,
   isChatChannel,
   isChatSuperGroup,
   isDeletedUser,
   isMessageLocal,
   isServiceNotificationMessage,
   isUserBot,
+  isUserId,
   splitMessagesForForwarding,
 } from '../../helpers';
 import { isApiPeerUser } from '../../helpers/peers';
@@ -327,6 +329,16 @@ addActionHandler('sendMessage', (global, actions, payload): ActionReturnType => 
   }
 
   const chat = selectChat(global, chatId!)!;
+
+  // Handle slow mode
+  const isChatWithUser = chatId ? isUserId(chatId) : false;
+  if (chat && !isChatWithUser) {
+    const chatFullInfo = selectChatFullInfo(global, chat.id);
+    if (chatFullInfo?.slowMode?.seconds && !isChatAdmin(chat)) {
+      actions.loadFullChat({ chatId: chat.id, force: true });
+    }
+  }
+
   const draft = selectDraft(global, chatId!, threadId!);
   const isForwarding = selectTabState(global, tabId).forwardMessages?.messageIds?.length;
 

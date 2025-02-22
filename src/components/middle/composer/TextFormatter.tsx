@@ -134,7 +134,7 @@ const TextFormatter: FC<OwnProps> = ({
     // Look up the formats inside the range
     const clonedFragment = range.cloneContents();
     clonedFragment.querySelectorAll('*').forEach((el) => {
-      const tagName = el.tagName; // например, "B", "I" и т.д.
+      const tagName = el.tagName;
       const formatKey = getFormatByTag(tagName);
       if (formatKey && formatKey !== 'image') {
         newFormats[formatKey] = true;

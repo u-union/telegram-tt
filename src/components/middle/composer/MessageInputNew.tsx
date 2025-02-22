@@ -35,7 +35,6 @@ import TextTimer, { TextTimerDetails } from '../../ui/TextTimer';
 import TextFormatter from './TextFormatter.async';
 
 import './MessageInputNew.scss';
-import { INPUT_WRAPPER_CLASS } from "../../../config";
 
 const INPUT_SCROLLER_CLASS = 'input-scroller';
 
