@@ -391,6 +391,7 @@ const SettingsFoldersEdit: FC<OwnProps & StateProps> = ({
 
           <ListItem
             className="settings-folders-list-item color-primary"
+            disabled={!state.folder.title.text || !state.folder.includedChatIds.length}
             icon="add"
             narrow
             onClick={handleCreateInviteClick}

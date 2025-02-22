@@ -46,6 +46,8 @@ const MAX_ATTACHMENT_MODAL_INPUT_HEIGHT = 160;
 const MAX_STORY_MODAL_INPUT_HEIGHT = 128;
 const TRANSITION_DURATION_FACTOR = 50;
 
+const BROWSER_NEW_LINES = ['\n', '\n\n', '<br>', '<div><br></div>'];
+
 type OwnProps = {
   inputRef: RefObject<HTMLDivElement | null>;
   type: ComposerType;
@@ -316,19 +318,23 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const handleInputBoxChange = useLastCallback((e: ChangeEvent<HTMLDivElement>) => {
     const { innerHTML, textContent } = e.currentTarget;
 
+    // Better handling of empty new lines
+    if (BROWSER_NEW_LINES.includes(textContent || '')) {
+      onInputHtmlChange('');
+      inputRef.current!.innerHTML = '';
+      return;
+    }
+
     if (
-      (!textContent || !textContent.length) // Empty text
+      !textContent?.length  // Empty text
       && !(!IS_EMOJI_SUPPORTED && innerHTML.includes('emoji-small')) // No small emoji
       && !(innerHTML.includes('custom-emoji')) // No custom emoji
     ) {
       onInputHtmlChange('');
 
-      // Remove any active styling when input is cleared
-      if (window.getSelection()) {
-        inputRef.current!.blur();
-        removeAllSelections();
-        focusOnInputBox();
-      }
+      // Remove selection 
+      removeAllSelections();
+      focusOnInputBox();
     } else {
       onInputHtmlChange(innerHTML);
     }
@@ -395,6 +401,12 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         }
       }
 
+      if (isMobileDevice && !inputHTML) {
+        if (key === 'Enter') {
+          e.preventDefault(); // Prevent new line on empty input
+        } 
+      }
+
       // Handle standalone ArrowUp for editing the last message.
       if (e.key === 'ArrowUp' && !inputHTML && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
@@ -443,7 +455,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const handleTextFormatterDisplay = useLastCallback(() => {
     requestMeasure(() => {
       if (!isTextSelected()) return false;
-      
+
       const selection = window.getSelection();
       const selectionRange = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
 
@@ -463,7 +475,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
 
       /** Set the anchor position and selected text, then display the text formatter */
       requestMutation(() => {
-        setTextFormatterAnchorPosition({ x, y});
+        setTextFormatterAnchorPosition({ x, y });
         setSelectedRange(selectionRange || undefined);
         displayTextFormatter();
       });

@@ -203,7 +203,10 @@ const TextFormatter: FC<OwnProps> = ({
     const html = getHtml();
     const slpTextArray = parseHtmlIntoSLFormat(html);
 
-    // Add endOffset for every IMG
+    if (slpTextArray.length === 0 || slpTextArray.length !== endOffset + 1 - startOffset) {
+      console.warn('Error while parsing HTML into SLP format');
+      return;
+    }
 
     // Apply/remove format
     const tagName = getTagByFormat(format);
@@ -334,10 +337,13 @@ const TextFormatter: FC<OwnProps> = ({
    */
   const parseHtmlIntoSLFormat = useLastCallback((html: string): SlpChar[] => {
     const parser = new DOMParser();
-    const root = parser.parseFromString(html, 'text/html').body;
+
+    // Wrap HTML into pre tag to parse it
+    // Pre tag used to preserve spaces at the begginning of string
+    const wrappedHTML = `<pre>${html}</pre>`;
+    const root = parser.parseFromString(wrappedHTML, 'text/html').body.querySelector('pre')!;
 
     const slpArray: SlpChar[] = [];
-
     let regression_depth = 0;
     const getSlfFromNode = (children: ChildNode[], parentFormat: Set<string>) => {
       // Prevent infinite recursion
