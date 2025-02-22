@@ -337,7 +337,7 @@ function parseHtmlToDom(html: string): HTMLElement {
 function getCleanStringFromHtmlText(html: string): string {
   const fragment = document.createElement('div');
   fragment.innerHTML = html;
-  return fragment.innerText.trim().replace(/\u200b+/g, '');
+  return fragment.innerText.replace(/\u200b+/g, '');
 }
 
 function getElementAttributes(element: HTMLElement, type: ApiMessageEntityTypes): Record<string, string> {

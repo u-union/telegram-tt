@@ -359,14 +359,22 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
 
   const handleInputBoxKeyUp = useLastCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const { key } = e;
+
     if (key === 'ArrowRight' || key === 'ArrowLeft') {
 
       if (shouldResetFormat.current === key) {
         // If pressed second time, reset the format
         const caretPose = getCaretPosition(inputRef.current!) + (key === 'ArrowRight' ? 1 : 0);
+
+        // Really like how it works with space
         inputRef.current!.innerHTML = key === 'ArrowRight' ?
-          inputRef.current!.innerHTML + '\u200B' :
-          '\u200B' + inputRef.current!.innerHTML;
+          inputRef.current!.innerHTML + ' ' :
+          ' ' + inputRef.current!.innerHTML;
+        // But can be used with zero-width space
+        // inputRef.current!.innerHTML = key === 'ArrowRight' ?
+        // inputRef.current!.innerHTML + '\u200B' :
+        // '\u200B' + inputRef.current!.innerHTML;
+
         setCaretPosition(inputRef.current!, caretPose);
         shakeElement(inputRef.current, true);
       } else {
@@ -376,16 +384,19 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
         if (range) {
           const container = range.startContainer;
           const formattedParent = container.parentElement?.id;
+          const caretPose = getCaretPosition(inputRef.current!)
+          const inputLength = inputRef.current?.textContent?.length;
 
           // Check that currently not in the editable input but inside the format tag
-          if (formattedParent !== editableInputId) {
+          if (formattedParent !== editableInputId && caretPose && inputLength) {
             const isAtEnd = key === 'ArrowRight' &&
               range.startOffset === container.textContent?.length;
             const isAtStart = key === 'ArrowLeft' &&
               range.startOffset === 0;
 
             // If at the start/end of foramt tag, wait for dbclick to reset the format
-            if (isAtEnd || isAtStart) {
+            // Only use if borders of format tag is same as input borders
+            if ((isAtEnd && caretPose === inputLength) || (isAtStart && caretPose === 0)) {
               shouldResetFormat.current = key;
               return;
             }
