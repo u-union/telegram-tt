@@ -85,11 +85,6 @@ export default function parseHtmlAsFormattedTextNew(
   const formattedText = convertTreeToFormattedText(tree);
   console.warn('formattedText:', formattedText);
 
-  // Create a fragment to get the inner text
-  const fragment = document.createElement('div');
-  fragment.innerHTML = formattedText.text;
-  formattedText.text = fragment.innerText.trim().replace(/\u200b+/g, '');
-  console.warn('fragment:', fragment);
   return formattedText;
 }
 
@@ -134,7 +129,7 @@ function parseHtmlToTree(html: string, skipMarkdown?: boolean): MarkupTree {
     // Prevent infinite recursion
     if (regression_depth > MAX_REGRESSION_DEPTH) {
       console.warn('Max regression depth reached');
-      parsedTree.text += tokens.map(token => token.text).join('');
+      parsedTree.text += tokens.map(token => getCleanStringFromHtmlText(token.text)).join('');
       return nodes;
     }
 
@@ -149,7 +144,7 @@ function parseHtmlToTree(html: string, skipMarkdown?: boolean): MarkupTree {
       // If it's a text token, add it to the text
       // Also, if it's a close tag (before the open tag), add it to the text
       if (token.type === 'text' || token.isCloseTag) {
-        parsedTree.text += token.text;
+        parsedTree.text += getCleanStringFromHtmlText(token.text);
         continue;
       } else if (token.type === ApiMessageEntityTypes.CustomEmoji) {
         // Handle custom emoji
@@ -177,7 +172,7 @@ function parseHtmlToTree(html: string, skipMarkdown?: boolean): MarkupTree {
 
       if (closeTagIndex === -1) {
         console.warn('Close tag not found');
-        parsedTree.text += token.text;
+        parsedTree.text += getCleanStringFromHtmlText(token.text);
         continue;
       }
       const closeTag = tokens[closeTagIndex];
@@ -337,6 +332,12 @@ function findMarkdownTag(text: string, skipMarkdown?: boolean): MarkupToken | un
 function parseHtmlToDom(html: string): HTMLElement {
   const parser = new DOMParser();
   return parser.parseFromString(html, 'text/html').body.firstChild as HTMLElement;
+}
+
+function getCleanStringFromHtmlText(html: string): string {
+  const fragment = document.createElement('div');
+  fragment.innerHTML = html;
+  return fragment.innerText.trim().replace(/\u200b+/g, '');
 }
 
 function getElementAttributes(element: HTMLElement, type: ApiMessageEntityTypes): Record<string, string> {
