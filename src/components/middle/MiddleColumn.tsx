@@ -432,6 +432,7 @@ function MiddleColumn({
     styles.background,
     styles.withTransition,
     customBackground && styles.customBgImage,
+    customBackground && 'custom_background_blur',
     backgroundColor && styles.customBgColor,
     isRightColumnShown && styles.withRightColumn,
     IS_ELECTRON && !(renderingChatId && renderingThreadId) && styles.draggable,

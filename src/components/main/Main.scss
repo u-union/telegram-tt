@@ -41,13 +41,18 @@
   background-color: var(--color-background);
 
   @media (min-width: 926px) {
-    --left-column-min-width: 23rem;
-    --left-column-max-width: 40vw;
+    --left-column-min-width: 15rem;
+    --left-column-max-width: 50vw;
   }
 
   @media (min-width: 1276px) {
+    --left-column-min-width: 20rem;
+    --left-column-max-width: 45vw;
+  }
+
+  @media (min-width: 1600px) {
     --left-column-min-width: 25rem;
-    --left-column-max-width: 30vw;
+    --left-column-max-width: 40vw;
   }
 
   @media (max-width: 925px) {
@@ -56,6 +61,7 @@
     top: 0;
     height: calc(var(--vh, 1vh) * 100);
     width: 26.5rem !important;
+    min-width: 40vw;
 
     transform: translate3d(-5rem, 0, 0);
     transition: transform var(--layer-transition);

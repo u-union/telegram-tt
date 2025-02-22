@@ -28,7 +28,7 @@
     height: 100%;
   }
 
-  .MiddleColumn-module__customBgImage::before {
+  .custom_background_blur::before {
     filter: blur(var(--blur-size));
   }
 
