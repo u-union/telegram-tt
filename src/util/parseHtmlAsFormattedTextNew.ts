@@ -291,6 +291,19 @@ function tokenizeMarkdown(html: string, skipMarkdown?: boolean): MarkupToken[] {
     }
   }
 
+  // Find text first and trim(delete spaces) it from start, then last and trim it from end
+  const arrayCopy = [...markupTokens];
+  let textStartIndex = 0;
+  let textEndIndex = arrayCopy.length - 1;
+  while (arrayCopy[textStartIndex].type !== 'text') {
+    textStartIndex++;
+  }
+  while (arrayCopy[textEndIndex].type !== 'text') {
+    textEndIndex--;
+  }
+  arrayCopy[textStartIndex].text = arrayCopy[textStartIndex].text.trimStart();
+  arrayCopy[textEndIndex].text = arrayCopy[textEndIndex].text.trimEnd();
+
   return markupTokens;
 }
 
