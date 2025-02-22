@@ -23,7 +23,7 @@ import Icon from '../../common/icons/Icon';
 
 import buildClassName from '../../../util/buildClassName';
 import focusEditableElement from "../../../util/focusEditableElement";
-import { removeAllSelections, setCaretPositionToLast } from "../../../util/selection";
+import { getCaretPosition, removeAllSelections, setCaretPosition, setCaretPositionToLast } from "../../../util/selection";
 import { Signal } from "../../../util/signals";
 import parseEmojiOnlyString from '../../../util/emoji/parseEmojiOnlyString';
 import { IS_ANDROID, IS_EMOJI_SUPPORTED, IS_IOS, IS_TOUCH_ENV } from '../../../util/windowEnvironment';
@@ -126,6 +126,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const isAttachmentModalInput = type === 'caption';
   const isActive = isAttachmentModalInput === hasAttachments;
   const isNeedPremiumInStory = isStoryInput && isNeedPremium;
+  const shouldResetFormat = useRef<"ArrowLeft" | "ArrowRight" | null>(null);
 
   const { isMobile } = useAppLayout();
   const isMobileDevice = !!isMobile && (IS_IOS || IS_ANDROID);
@@ -345,14 +346,56 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    * @param element - HTMLElement to vibrate
    * @returns 
    */
-  const shakeElement = (element: HTMLElement | null) => {
-    if (!element || !element.classList || element.classList.contains('shake-effect')) return;
+  const shakeElement = (element: HTMLElement | null, vertical?: boolean) => {
+    const shakeEffect = vertical ? 'shake-effect-v' : 'shake-effect-h';
 
-    requestMutation(() => element.classList.add('shake-effect'));
+    if (!element || !element.classList || element.classList.contains(shakeEffect)) return;
+
+    requestMutation(() => element.classList.add(shakeEffect));
     setTimeout(() => {
-      requestMutation(() => element.classList.remove('shake-effect'));
+      requestMutation(() => element.classList.remove(shakeEffect));
     }, 300); // same as animation (no sense to change)
   }
+
+  const handleInputBoxKeyUp = useLastCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const { key } = e;
+    if (key === 'ArrowRight' || key === 'ArrowLeft') {
+
+      if (shouldResetFormat.current === key) {
+        // If pressed second time, reset the format
+        const caretPose = getCaretPosition(inputRef.current!) + (key === 'ArrowRight' ? 1 : 0);
+        inputRef.current!.innerHTML = key === 'ArrowRight' ?
+          inputRef.current!.innerHTML + '\u200B' :
+          '\u200B' + inputRef.current!.innerHTML;
+        setCaretPosition(inputRef.current!, caretPose);
+        shakeElement(inputRef.current, true);
+      } else {
+        const selection = window.getSelection();
+        const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+        if (range) {
+          const container = range.startContainer;
+          const formattedParent = container.parentElement?.id;
+
+          // Check that currently not in the editable input but inside the format tag
+          if (formattedParent !== editableInputId) {
+            const isAtEnd = key === 'ArrowRight' &&
+              range.startOffset === container.textContent?.length;
+            const isAtStart = key === 'ArrowLeft' &&
+              range.startOffset === 0;
+
+            // If at the start/end of foramt tag, wait for dbclick to reset the format
+            if (isAtEnd || isAtStart) {
+              shouldResetFormat.current = key;
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    shouldResetFormat.current = null;
+  });
 
   /**
    * Handle the key event inside the input box
@@ -360,7 +403,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
   const handleInputBoxKeyDown = useLastCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const { isComposing, key, ctrlKey, altKey, metaKey, shiftKey } = e
     const inputHTML = getHtmlInputText();
-    
+
     if (!isComposing) {
       // Handle Ctrl/Cmd + Z/Y for undo/redo
       if ((ctrlKey || metaKey) && (key.toLowerCase() === 'z' || key.toLowerCase() === 'y')) {
@@ -404,7 +447,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       if (isMobileDevice && !inputHTML) {
         if (key === 'Enter') {
           e.preventDefault(); // Prevent new line on empty input
-        } 
+        }
       }
 
       // Handle standalone ArrowUp for editing the last message.
@@ -508,6 +551,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
             contentEditable={isAttachmentModalInput || canSendPlainText}
             onChange={handleInputBoxChange}
             onKeyDown={handleInputBoxKeyDown}
+            onKeyUp={handleInputBoxKeyUp}
             onMouseDown={handleInputBoxMouseDown}
             onContextMenu={IS_ANDROID ? handleAndroidContextMenu : undefined}
             onTouchCancel={IS_ANDROID ? debouncedHandleTextFormatterDisplay : undefined}

@@ -1,6 +1,6 @@
 @use '../../../styles/mixins';
 
-@keyframes shake {
+@keyframes horizontalShake {
   0% { transform: translateX(0); }
   10% { transform: translateX(-1px); }
   20% { transform: translateX(1px); }
@@ -12,6 +12,15 @@
   80% { transform: translateX(1px); }
   90% { transform: translateX(-1px); }
   100% { transform: translateX(0); }
+}
+
+@keyframes verticalShake {
+  0% { transform: translateY(-1px); }
+  20% { transform: translateY(1px); }
+  40% { transform: translateY(-1px); }
+  60% { transform: translateY(1px); }
+  80% { transform: translateY(-1px); }
+  100% { transform: translateY(1px); }
 }
 
 .MessageInput {
@@ -105,8 +114,11 @@
         }
       }
 
-      &.shake-effect {
-        animation: shake 0.3s ease-out;
+      &.shake-effect-h {
+        animation: horizontalShake 0.3s ease-out;
+      }
+      &.shake-effect-v {
+        animation: verticalShake 0.3s ease-out;
       }
     }
 
@@ -127,8 +139,11 @@
       max-width: 100%;
       transition: opacity 200ms ease-out, transform 200ms ease-out;
 
-      &.shake-effect {
-        animation: shake 0.3s ease-out;
+      &.shake-effect-h {
+        animation: horizontalShake 0.3s ease-out;
+      }
+      &.shake-effect-v {
+        animation: verticalShake 0.3s ease-out;
       }
       
       &.with-icon {
