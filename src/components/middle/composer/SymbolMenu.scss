@@ -12,6 +12,11 @@
     right: 0;
     bottom: 0;
     background: var(--color-background);
+    // Apply same bg to the menu on mobile as on desktop
+    body:not(.no-menu-blur) & {
+      background: var(--color-background-compact-menu);
+      backdrop-filter: blur(25px);
+    }
     z-index: var(--z-symbol-menu-mobile);
 
     transition: transform var(--layer-transition);

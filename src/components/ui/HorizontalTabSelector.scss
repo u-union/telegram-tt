@@ -1,0 +1,74 @@
+.horizontal-tab-selector {
+  --horizontal-tab-selector-width: 2rem;
+
+  &-container {
+    width: var(--horizontal-tab-selector-width);
+    height: var(--horizontal-tab-selector-width);
+
+    background-color: transparent;
+    border-radius: 2rem;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    overflow: hidden;
+    background-color: transparent;
+
+    transition:
+      width 150ms ease-out,
+      height 100ms ease-in,
+      background-color 100ms ease-in,
+      border-radius 100ms ease-in,
+      box-shadow 100ms ease-in,
+      padding 100ms ease-in;
+
+    .horizontal-tab-selector-button {
+      width: 0;
+      height: var(--horizontal-tab-selector-width);
+      transition: width 150ms ease-in;
+      &.placeholder { width: var(--horizontal-tab-selector-width) }
+      
+      padding: 0;
+
+      .icon {
+        font-size: 1.9rem !important;
+        transition: font-size 100ms ease-in;
+        margin-bottom: 2px !important; // Fix iconfont alignment
+        margin-left: 1px !important; // Fix iconfont alignment
+      }
+    }
+
+    &.expanded {
+      width: calc(var(--horizontal-tab-selector-width) * 4);
+      height: 2.3rem;
+
+      overflow-x: scroll;
+      overflow-y: hidden;
+
+      background-color: rgba(0, 199, 62, 0.06);
+      border-radius: 2.3rem;
+      padding: 0 0.3rem;;
+      box-shadow: inset 0 0 0.1rem 0.02rem var(--color-borders-alternate);
+
+      .horizontal-tab-selector-button {
+        width: var(--horizontal-tab-selector-width) !important;
+        height: var(--horizontal-tab-selector-width) !important;
+
+        &.selected {
+          color: var(--color-primary);
+          .icon {
+            font-size: 1.9rem !important;
+            margin-bottom: 4px !important; // Fix iconfont alignment
+          }
+        }
+
+        .icon {
+          font-size: 1.6rem !important;
+          margin-bottom: 2px !important; // Fix iconfont alignment
+          margin-left: 1px !important; // Fix iconfont alignment
+        }
+      }
+    }
+  } 
+}

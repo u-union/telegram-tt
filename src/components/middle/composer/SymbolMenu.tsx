@@ -20,13 +20,12 @@ import useMouseInside from '../../../hooks/useMouseInside';
 import useOldLang from '../../../hooks/useOldLang';
 import useShowTransitionDeprecated from '../../../hooks/useShowTransitionDeprecated';
 
-import CustomEmojiPicker from '../../common/CustomEmojiPicker';
 import Icon from '../../common/icons/Icon';
 import Button from '../../ui/Button';
 import Menu from '../../ui/Menu';
 import Portal from '../../ui/Portal';
 import Transition from '../../ui/Transition';
-import EmojiPicker from './EmojiPicker';
+import CombinedEmojiPicker from './CombinedEmojiPicker';
 import GifPicker from './GifPicker';
 import StickerPicker from './StickerPicker';
 import SymbolMenuFooter, { SYMBOL_MENU_TAB_TITLES, SymbolMenuTabs } from './SymbolMenuFooter';
@@ -198,21 +197,9 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
     switch (activeTab) {
       case SymbolMenuTabs.Emoji:
         return (
-          <EmojiPicker
+          <CombinedEmojiPicker
             className="picker-tab"
             onEmojiSelect={handleEmojiSelect}
-          />
-        );
-      case SymbolMenuTabs.CustomEmoji:
-        return (
-          <CustomEmojiPicker
-            className="picker-tab"
-            isHidden={!isOpen || !isActive}
-            idPrefix={idPrefix}
-            loadAndPlay={isOpen && (isActive || isFrom)}
-            chatId={chatId}
-            isTranslucent={!isMobile && isBackgroundTranslucent}
-            onCustomEmojiSelect={handleCustomEmojiSelect}
           />
         );
       case SymbolMenuTabs.Stickers:
