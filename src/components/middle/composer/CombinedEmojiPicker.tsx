@@ -15,7 +15,8 @@ import type {
 
 import { MENU_TRANSITION_DURATION, RECENT_SYMBOL_SET_ID } from '../../../config';
 import animateHorizontalScroll from '../../../util/animateHorizontalScroll';
-import animateScroll from '../../../util/animateScroll';
+import { requestMeasure } from '../../../lib/fasterdom/fasterdom';
+import { debounce } from '../../../util/schedulers';
 import buildClassName from '../../../util/buildClassName';
 import { uncompressEmoji } from '../../../util/emoji/emoji';
 import { pick } from '../../../util/iteratees';
@@ -66,7 +67,7 @@ const FOCUS_MARGIN = 3.25 * REM;
 const HEADER_BUTTON_WIDTH = 2.625 * REM; // Includes margins
 const INTERSECTION_THROTTLE = 200;
 
-const categoryIntersections: boolean[] = [];
+const categoryIntersections: Record<number, boolean> = {};
 
 let emojiDataPromise: Promise<EmojiModule>;
 let emojiRawData: EmojiRawData;
@@ -85,16 +86,22 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
   const [categories, setCategories] = useState<EmojiCategoryData[]>();
   const [emojis, setEmojis] = useState<AllEmojis>();
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+
   const { isMobile } = useAppLayout();
   const {
     handleScroll: handleContentScroll,
     isAtBeginning: shouldHideTopBorder,
   } = useScrolledState();
 
-  const { observe: observeIntersection } = useIntersectionObserver({
+  const {
+    observe: observeIntersection,
+    freeze: freezeIntersection,
+    unfreeze: unfreezeIntersection,
+  } = useIntersectionObserver({
     rootRef: containerRef,
     throttleMs: INTERSECTION_THROTTLE,
   }, (entries) => {
+    // Update the intersection state for each category
     entries.forEach((entry) => {
       const { id } = entry.target as HTMLDivElement;
       if (!id || !id.startsWith('emoji-category-')) {
@@ -105,15 +112,14 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
       categoryIntersections[index] = entry.isIntersecting;
     });
 
-    const minIntersectingIndex = categoryIntersections.reduce((lowestIndex, isIntersecting, index) => {
-      return isIntersecting && index < lowestIndex ? index : lowestIndex;
-    }, Infinity);
+    // Get the lowest intersecting index
+    const intersectingIndexes =
+      Object.entries(categoryIntersections)
+        .filter(([_, isIntersecting]) => isIntersecting)
+        .map(([index, _]) => Number(index));
 
-    if (minIntersectingIndex === Infinity) {
-      return;
-    }
-
-    setActiveCategoryIndex(minIntersectingIndex);
+    // Set the active category index to the lowest intersecting index (if there are any)
+    intersectingIndexes?.length && setActiveCategoryIndex(Math.min(...intersectingIndexes));
   });
 
   const canRenderContents = useAsyncRendering([], MENU_TRANSITION_DURATION);
@@ -173,17 +179,73 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
     }, OPEN_ANIMATION_DELAY);
   }, []);
 
-  const selectCategory = useLastCallback((index: number) => {
-    setActiveCategoryIndex(index);
+  /**
+   * Scroll to the category
+   * @param index - The index of the category to scroll to
+   */
+  const scrollToCategory = (index: number) => {
     const categoryEl = containerRef.current!.closest<HTMLElement>('.SymbolMenu-main')!
       .querySelector(`#emoji-category-${index}`)! as HTMLElement;
-    animateScroll({
-      container: containerRef.current!,
-      element: categoryEl,
-      position: 'start',
-      margin: FOCUS_MARGIN,
-      maxDistance: SMOOTH_SCROLL_DISTANCE,
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    requestMeasure(() => {
+      // Calculate the target scroll position
+      const targetScrollTop = categoryEl.offsetTop - FOCUS_MARGIN;
+
+      // Get the current scroll position
+      const currentScrollTop = container.scrollTop;
+
+      // Determine from where we approach the target
+      const scrollDirection = currentScrollTop > targetScrollTop ? 1 : -1;
+
+      // Calculate the target 'instant' scroll position
+      const targetScrollTopInstant = targetScrollTop + scrollDirection * SMOOTH_SCROLL_DISTANCE;
+
+      // Check if current scroll position is already closer then 'instant' one to the target
+      const scrollInstantTo = scrollDirection === -1 ?
+        Math.max(targetScrollTopInstant, currentScrollTop) :
+        Math.min(targetScrollTopInstant, currentScrollTop);
+
+      // Instant scroll before target position
+      container.scrollTo({
+        top: scrollInstantTo,
+        behavior: 'instant',
+      });
+
+      // Smooth scroll to the target position
+      container.scrollTo({
+        top: targetScrollTop,
+        behavior: 'smooth',
+      });
+
+      /**
+       * Freeze the intersection observer while scrolling
+       * As it will set the active category index(es) while scrolling
+       * Using debounce as there are multiple scrollend events coming
+       */
+      freezeIntersection();
+
+      const handleScrollEnd = debounce(() => {
+        unfreezeIntersection();
+        container.removeEventListener('scrollend', handleScrollEnd);
+      }, 300, false, true);
+
+      container.addEventListener('scrollend', handleScrollEnd);
     });
+  };
+
+  const selectCategory = useLastCallback((index: number) => {
+    setActiveCategoryIndex(index);
+
+    /**
+     * Created custom scroll animation
+     * When using animateScroll, the scroll is blocking other animations (e.g. scroll in the header)
+     * It was not an issue in the previous implementation because there were no other animations
+     * Now it's not blocking any animation
+     */
+    scrollToCategory(index);
   });
 
   const handleEmojiSelect = useLastCallback((emoji: string, name: string) => {
@@ -225,12 +287,11 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
 
   return (
     <div className={containerClassName}>
-      <div
-        ref={headerRef}
-        className={headerClassName}
-        dir={lang.isRtl ? 'rtl' : undefined}
-      >
-        { renderCategoryButton(allCategories[0], 0) }
+      <div ref={headerRef} className={headerClassName} dir={lang.isRtl ? 'rtl' : undefined}>
+        {
+          /* Recent emojis category button */
+          renderCategoryButton(allCategories[0], 0)
+        }
 
         {
           /* Static emojis category buttons */

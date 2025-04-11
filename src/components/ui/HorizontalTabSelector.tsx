@@ -4,6 +4,9 @@ import type { IconName } from '../../types/icons';
 
 import buildClassName from '../../util/buildClassName';
 import animateHorizontalScroll from '../../util/animateHorizontalScroll';
+
+import useHorizontalScroll from '../../hooks/useHorizontalScroll';
+import useAppLayout from '../../hooks/useAppLayout';
 import useLastCallback from '../../hooks/useLastCallback';
 import useFlag from '../../hooks/useFlag';
 
@@ -11,8 +14,7 @@ import Button from './Button';
 import Icon from '../common/icons/Icon';
 
 import './HorizontalTabSelector.scss';
-import useHorizontalScroll from '../../hooks/useHorizontalScroll';
-import useAppLayout from '../../hooks/useAppLayout';
+
 
 type TabSelectorOption = {
   index: number;
@@ -55,17 +57,11 @@ const HorizontalTabSelector: FC<OwnProps> = ({
    */
   useEffect(() => {
     // If the selector is open and the active index is not in the options, close the selector
-    if (isOpen && !options.find((option) => option.index === activeIndex)) {
-      containerInnerRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
-
-      // Close the selector when the scroll ends
-      const handleScrollEnd = () => {
-        closeSelector();
-      };
-      containerInnerRef.current?.addEventListener('scrollend', handleScrollEnd);
-      return () => {
-        containerInnerRef.current?.removeEventListener('scrollend', handleScrollEnd);
-      };
+    if (isOpen && !options.find((option) => option.index === activeIndex) && containerInnerRef.current) {
+      animateHorizontalScroll(containerInnerRef.current, 0, 100)
+        .finally(() => {
+          closeSelector();
+        });
     }
 
     // If the selector is not open and the active index is in the options, open the selector
@@ -81,7 +77,7 @@ const HorizontalTabSelector: FC<OwnProps> = ({
         const selectedButtonRect = selectedButton.getBoundingClientRect();
         const containerRect = containerRef.current.getBoundingClientRect();
         const buttonLeft = selectedButtonRect.left - containerRect.left + containerInnerRef.current.scrollLeft;
-        
+
         // Calculate the target scroll position that would center the button and clamp it
         const targetScrollLeft = buttonLeft - (containerRect.width - selectedButtonRect.width) / 2;
         const maxScroll = containerInnerRef.current.scrollWidth - containerRect.width;
