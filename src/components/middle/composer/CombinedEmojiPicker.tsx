@@ -69,6 +69,8 @@ const INTERSECTION_THROTTLE = 200;
 
 const categoryIntersections: Record<number, boolean> = {};
 
+let categoryIntersectionsTimeout: NodeJS.Timeout;
+
 let emojiDataPromise: Promise<EmojiModule>;
 let emojiRawData: EmojiRawData;
 let emojiData: EmojiData;
@@ -225,14 +227,28 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
        * As it will set the active category index(es) while scrolling
        * Using debounce as there are multiple scrollend events coming
        */
-      freezeIntersection();
+      freezeIntersection(true);
 
+      // Fallback if the intersection observer is not unfreezed in time
+      // Not required, but prevent from freezing if user would start scrolling fast purposely after selecting a category
+      // As need to use 'scroll' instead of 'scrollend' event listener,
+      // because 'scrollend' event is not fired on mobile (tested on iOS, Chrome)
+      clearTimeout(categoryIntersectionsTimeout);
+      categoryIntersectionsTimeout = setTimeout(() => {
+        container.removeEventListener('scroll', handleScrollEnd);
+        unfreezeIntersection();
+      }, 500);
+
+      // Handle the scroll end event with debounce
       const handleScrollEnd = debounce(() => {
         unfreezeIntersection();
-        container.removeEventListener('scrollend', handleScrollEnd);
-      }, 300, false, true);
+        container.removeEventListener('scroll', handleScrollEnd);
+        clearTimeout(categoryIntersectionsTimeout);
+      }, 200, false, true);
 
-      container.addEventListener('scrollend', handleScrollEnd);
+      // Remove old the event listener and timeout before adding new one
+      container.removeEventListener('scroll', handleScrollEnd);
+      container.addEventListener('scroll', handleScrollEnd);
     });
   };
 

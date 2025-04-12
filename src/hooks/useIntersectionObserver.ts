@@ -24,7 +24,7 @@ interface IntersectionController {
 
 interface Response {
   observe: ObserveFn;
-  freeze: NoneToVoidFunction;
+  freeze: (notAccumulatingFreezeCount?: boolean) => void;
   unfreeze: NoneToVoidFunction;
 }
 
@@ -54,8 +54,12 @@ export function useIntersectionObserver({
 
   rootCallbackRef.current = rootCallback;
 
-  const freeze = useLastCallback(() => {
-    freezeFlagsRef.current++;
+  const freeze = useLastCallback((notAccumulatingFreezeCount?: boolean) => {
+    if (notAccumulatingFreezeCount) {
+      freezeFlagsRef.current = 1;
+    } else {
+      freezeFlagsRef.current++;
+    }
   });
 
   const unfreeze = useLastCallback(() => {
