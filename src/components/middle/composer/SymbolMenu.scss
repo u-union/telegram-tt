@@ -12,11 +12,13 @@
     right: 0;
     bottom: 0;
     background: var(--color-background);
+
     // Apply same bg to the menu on mobile as on desktop
     body:not(.no-menu-blur) & {
       background: var(--color-background-compact-menu);
       backdrop-filter: blur(25px);
     }
+
     z-index: var(--z-symbol-menu-mobile);
 
     transition: transform var(--layer-transition);
@@ -102,7 +104,7 @@
   }
 
   .is-pointer-env & {
-    > .backdrop {
+    >.backdrop {
       position: absolute;
       top: -1rem;
       left: 0;
@@ -111,24 +113,24 @@
       height: 4.5rem;
     }
 
-    &.attachment-modal-symbol-menu > .backdrop {
+    &.attachment-modal-symbol-menu>.backdrop {
       bottom: 0;
       top: auto;
     }
   }
 
   // TODO Remove this monster with context menu refactor
-  .Button.bot-menu:not(.open) ~ &,
-  .Button.bot-commands ~ &,
-  .Button.send-as-button ~ & {
-    .is-pointer-env & > .backdrop {
+  .Button.bot-menu:not(.open)~&,
+  .Button.bot-commands~&,
+  .Button.send-as-button~& {
+    .is-pointer-env &>.backdrop {
       left: 3rem;
       width: 3.25rem;
     }
   }
 
-  .Button.bot-menu.open ~ & {
-    .is-pointer-env & > .backdrop {
+  .Button.bot-menu.open~& {
+    .is-pointer-env &>.backdrop {
       left: calc(var(--bot-menu-text-width, 0) + 3rem);
     }
   }
@@ -153,7 +155,8 @@
     transition-duration: 200ms !important;
   }
 
-  .StickerButton.custom-emoji, .sticker-set-cover {
+  .StickerButton.custom-emoji,
+  .sticker-set-cover {
     color: var(--color-text);
   }
 
@@ -299,8 +302,8 @@
     transition: none;
   }
 
-  > .EmojiButton,
-  > .StickerButton {
+  >.EmojiButton,
+  >.StickerButton {
     margin: 0;
   }
 }

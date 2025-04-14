@@ -4,6 +4,7 @@ const useHorizontalScroll = (
   containerRef: React.RefObject<HTMLDivElement>,
   isDisabled?: boolean,
   shouldPreventDefault = false,
+  shouldStopPropagation = false, // Allows to have scroll div inside other scrollable div
 ) => {
   useEffect(() => {
     if (isDisabled) {
@@ -17,6 +18,7 @@ const useHorizontalScroll = (
       if (!e.deltaX) {
         container.scrollLeft += e.deltaY / 4;
         if (shouldPreventDefault) e.preventDefault();
+        if (shouldStopPropagation) e.stopPropagation();
       }
     }
 

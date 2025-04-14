@@ -25,7 +25,7 @@ import Button from '../../ui/Button';
 import Menu from '../../ui/Menu';
 import Portal from '../../ui/Portal';
 import Transition from '../../ui/Transition';
-import CombinedEmojiPicker from './CombinedEmojiPicker';
+import CombinedEmojiPicker from '../../common/CombinedEmojiPicker';
 import GifPicker from './GifPicker';
 import StickerPicker from './StickerPicker';
 import SymbolMenuFooter, { SYMBOL_MENU_TAB_TITLES, SymbolMenuTabs } from './SymbolMenuFooter';
@@ -63,7 +63,7 @@ export type OwnProps = {
   isAttachmentModal?: boolean;
   canSendPlainText?: boolean;
 }
-& MenuPositionOptions;
+  & MenuPositionOptions;
 
 type StateProps = {
   isLeftColumnShown: boolean;
@@ -199,23 +199,47 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
         return (
           <CombinedEmojiPicker
             className="picker-tab"
+            isHidden={!isOpen || !isActive}
+            loadAndPlay={isOpen && (isActive || isFrom)}
             onEmojiSelect={handleEmojiSelect}
+            onCustomEmojiSelect={handleCustomEmojiSelect}
           />
         );
+      // case SymbolMenuTabs.CustomEmoji:
+      //   return (
+      //     <CustomEmojiPicker
+      //       className="picker-tab"
+      //       isHidden={!isOpen || !isActive}
+      //       idPrefix={idPrefix}
+      //       loadAndPlay={isOpen && (isActive || isFrom)}
+      //       chatId={chatId}
+      //       isTranslucent={!isMobile && isBackgroundTranslucent}
+      //       onCustomEmojiSelect={handleCustomEmojiSelect}
+      //     />
+      //   );
       case SymbolMenuTabs.Stickers:
         return (
-          <StickerPicker
+          <CustomEmojiPicker
             className="picker-tab"
             isHidden={!isOpen || !isActive}
-            loadAndPlay={canSendStickers ? isOpen && (isActive || isFrom) : false}
             idPrefix={idPrefix}
-            canSendStickers={canSendStickers}
-            noContextMenus={!isMessageComposer}
+            loadAndPlay={isOpen && (isActive || isFrom)}
             chatId={chatId}
-            threadId={threadId}
             isTranslucent={!isMobile && isBackgroundTranslucent}
-            onStickerSelect={handleStickerSelect}
+            onCustomEmojiSelect={handleCustomEmojiSelect}
           />
+          // <StickerPicker
+          //   className="picker-tab"
+          //   isHidden={!isOpen || !isActive}
+          //   loadAndPlay={canSendStickers ? isOpen && (isActive || isFrom) : false}
+          //   idPrefix={idPrefix}
+          //   canSendStickers={canSendStickers}
+          //   noContextMenus={!isMessageComposer}
+          //   chatId={chatId}
+          //   threadId={threadId}
+          //   isTranslucent={!isMobile && isBackgroundTranslucent}
+          //   onStickerSelect={handleStickerSelect}
+          // />
         );
       case SymbolMenuTabs.GIFs:
         return (

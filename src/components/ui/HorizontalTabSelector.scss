@@ -16,7 +16,7 @@
     background-color: transparent;
 
     transition:
-      width 150ms ease-out,
+      width 250ms ease-out,
       height 100ms ease-in,
       background-color 100ms ease-in,
       border-radius 100ms ease-in,
@@ -27,12 +27,14 @@
       width: 0;
       height: var(--horizontal-tab-selector-width);
       transition: width 150ms ease-in;
-      &.placeholder { width: var(--horizontal-tab-selector-width) }
-      
+
+      &.placeholder {
+        width: var(--horizontal-tab-selector-width)
+      }
+
       padding: 0;
 
       .icon {
-        font-size: 1.9rem !important;
         transition: font-size 100ms ease-in;
         margin-bottom: 2px !important; // Fix iconfont alignment
         margin-left: 1px !important; // Fix iconfont alignment
@@ -43,12 +45,14 @@
       width: calc(var(--horizontal-tab-selector-width) * 4);
       height: 2.3rem;
 
-      overflow-x: scroll;
+      overflow-x: auto;
       overflow-y: hidden;
+      white-space: nowrap;
 
       background-color: rgba(0, 199, 62, 0.06);
       border-radius: 2.3rem;
-      padding: 0 0.3rem;;
+      padding: 0 0.3rem;
+      ;
       box-shadow: inset 0 0 0.1rem 0.02rem var(--color-borders-alternate);
 
       .horizontal-tab-selector-button {
@@ -57,6 +61,7 @@
 
         &.selected {
           color: var(--color-primary);
+
           .icon {
             font-size: 1.9rem !important;
             margin-bottom: 4px !important; // Fix iconfont alignment
@@ -70,5 +75,5 @@
         }
       }
     }
-  } 
+  }
 }

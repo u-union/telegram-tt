@@ -5,6 +5,7 @@ import type { IconName } from '../../types/icons';
 import buildClassName from '../../util/buildClassName';
 import animateHorizontalScroll from '../../util/animateHorizontalScroll';
 
+import useCenterActiveElementHorizontally from '../common/hooks/useCenterActiveElementHorizontally';
 import useHorizontalScroll from '../../hooks/useHorizontalScroll';
 import useAppLayout from '../../hooks/useAppLayout';
 import useLastCallback from '../../hooks/useLastCallback';
@@ -15,6 +16,7 @@ import Icon from '../common/icons/Icon';
 
 import './HorizontalTabSelector.scss';
 
+const SELECTION_ID = 'horizontal-tab-selection';
 
 type TabSelectorOption = {
   index: number;
@@ -23,14 +25,18 @@ type TabSelectorOption = {
 };
 
 type OwnProps = {
+  id?: string;
   className?: string;
+  buttonClassName?: string;
   options: TabSelectorOption[];
   activeIndex: number;
   onSelect: (index: number) => void;
 };
 
 const HorizontalTabSelector: FC<OwnProps> = ({
+  id,
   className,
+  buttonClassName,
   options,
   activeIndex,
   onSelect,
@@ -50,7 +56,10 @@ const HorizontalTabSelector: FC<OwnProps> = ({
   });
 
   // Scroll tab on vertical scroll as well
-  useHorizontalScroll(containerInnerRef, !isOpen && !isMobile);
+  useHorizontalScroll(containerInnerRef, !isOpen || isMobile, false, true);
+
+  // Center the active element horizontally
+  useCenterActiveElementHorizontally(containerInnerRef, SELECTION_ID, activeIndex);
 
   /**
    * Handle selector flag + scroll to active index when the active index changes
@@ -58,7 +67,7 @@ const HorizontalTabSelector: FC<OwnProps> = ({
   useEffect(() => {
     // If the selector is open and the active index is not in the options, close the selector
     if (isOpen && !options.find((option) => option.index === activeIndex) && containerInnerRef.current) {
-      animateHorizontalScroll(containerInnerRef.current, 0, 100)
+      animateHorizontalScroll(containerInnerRef.current, 0, 50)
         .finally(() => {
           closeSelector();
         });
@@ -68,35 +77,21 @@ const HorizontalTabSelector: FC<OwnProps> = ({
     if (!isOpen && !!options.find((option) => option.index === activeIndex)) {
       openSelector();
     }
-
-    // Scroll to the active index
-    if (isOpen && containerRef.current && containerInnerRef.current) {
-      const selectedButton = document.querySelector('.horizontal-tab-selector-button.selected');
-      if (selectedButton) {
-        // Selected button position relative to viewport
-        const selectedButtonRect = selectedButton.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const buttonLeft = selectedButtonRect.left - containerRect.left + containerInnerRef.current.scrollLeft;
-
-        // Calculate the target scroll position that would center the button and clamp it
-        const targetScrollLeft = buttonLeft - (containerRect.width - selectedButtonRect.width) / 2;
-        const maxScroll = containerInnerRef.current.scrollWidth - containerRect.width;
-        const clampedScroll = Math.max(0, Math.min(targetScrollLeft, maxScroll));
-
-        // animateHorizontalScroll creates better animations than scrollTo
-        animateHorizontalScroll(containerInnerRef.current, clampedScroll);
-      }
-    }
   }, [isOpen, activeIndex, options, closeSelector, openSelector]);
 
   return (
-    <div ref={containerRef} className={buildClassName('horizontal-tab-selector', className)}>
+    <div
+      id={id}
+      ref={containerRef}
+      className={buildClassName('horizontal-tab-selector', className)}
+    >
       <div
         ref={containerInnerRef}
         className={buildClassName('horizontal-tab-selector-container', isOpen && 'expanded', 'no-scrollbar')}
       >
         {options.map((option, index) => (
           <Button
+            id={`${SELECTION_ID}-${option.index}`}
             round
             faded
             size='default'
@@ -105,6 +100,7 @@ const HorizontalTabSelector: FC<OwnProps> = ({
             ariaLabel={option.title}
             className={
               buildClassName(
+                buttonClassName,
                 'horizontal-tab-selector-button',
                 index === 0 && 'placeholder',
                 option.index === activeIndex && 'selected'

@@ -21,6 +21,7 @@ export function useStickerPickerObservers(
   headerRef: RefObject<HTMLDivElement>,
   idPrefix: string,
   isHidden?: boolean,
+  margin?: number,
 ) {
   const stickerSetIntersectionsRef = useRef<boolean[]>([]);
 
@@ -96,7 +97,7 @@ export function useStickerPickerObservers(
         container: containerRef.current!,
         element: stickerSetEl,
         position: 'start',
-        margin: FOCUS_MARGIN,
+        margin: margin || FOCUS_MARGIN,
         maxDistance: isClose ? SCROLL_MAX_DISTANCE_WHEN_CLOSE : SCROLL_MAX_DISTANCE_WHEN_FAR,
       });
 
