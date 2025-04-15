@@ -535,38 +535,48 @@ const Composer: FC<OwnProps & StateProps> = ({
     }
   }, [hasWebPagePreview]);
 
-  const insertHtmlAndUpdateCursor = useLastCallback((newHtml: string, inInputId: string = editableInputId) => {
-    if (inInputId === editableInputId && isComposerBlocked) return;
-    const selection = window.getSelection()!;
-    let messageInput: HTMLDivElement;
-    if (inInputId === editableInputId) {
-      messageInput = document.querySelector<HTMLDivElement>(editableInputCssSelector)!;
-    } else {
-      messageInput = document.getElementById(inInputId) as HTMLDivElement;
-    }
-
-    if (selection.rangeCount) {
-      const selectionRange = selection.getRangeAt(0);
-      if (isSelectionInsideInput(selectionRange, inInputId)) {
-        insertHtmlInSelection(newHtml);
-        messageInput.dispatchEvent(new Event('input', { bubbles: true }));
-        return;
+  const insertHtmlAndUpdateCursor = useLastCallback(
+    (
+      newHtml: string,
+      inInputId: string = editableInputId,
+      notFocusInput: boolean = false,
+    ) => {
+      if (inInputId === editableInputId && isComposerBlocked) return;
+      const selection = window.getSelection()!;
+      let messageInput: HTMLDivElement;
+      if (inInputId === editableInputId) {
+        messageInput = document.querySelector<HTMLDivElement>(editableInputCssSelector)!;
+      } else {
+        messageInput = document.getElementById(inInputId) as HTMLDivElement;
       }
-    }
 
-    setHtml(`${getHtml()}${newHtml}`);
+      if (selection.rangeCount && !notFocusInput) {
+        const selectionRange = selection.getRangeAt(0);
+        if (isSelectionInsideInput(selectionRange, inInputId)) {
+          insertHtmlInSelection(newHtml);
+          messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+          return;
+        }
+      }
 
-    // If selection is outside of input, set cursor at the end of input
-    focusEditableElement(messageInput);
-  });
+      setHtml(`${getHtml()}${newHtml}`);
+
+      // If selection is outside of input, set cursor at the end of input
+      // We don't want to focus the input if we're inserting an emoji
+      // Resolve issue on mobile devices where emoji selection (double tap or so)
+      // would focus the input and open the keyboard
+      if (!notFocusInput) {
+        focusEditableElement(messageInput);
+      }
+    });
 
   const insertTextAndUpdateCursor = useLastCallback((
-    text: string, inInputId: string = editableInputId,
+    text: string, inInputId: string = editableInputId, notFocusInput: boolean = false,
   ) => {
     const newHtml = renderText(text, ['escape_html', 'emoji_html', 'br_html'])
       .join('')
       .replace(/\u200b+/g, '\u200b');
-    insertHtmlAndUpdateCursor(newHtml, inInputId);
+    insertHtmlAndUpdateCursor(newHtml, inInputId, notFocusInput);
   });
 
   const insertFormattedTextAndUpdateCursor = useLastCallback((
@@ -577,7 +587,7 @@ const Composer: FC<OwnProps & StateProps> = ({
   });
 
   const insertCustomEmojiAndUpdateCursor = useLastCallback((emoji: ApiSticker, inInputId: string = editableInputId) => {
-    insertHtmlAndUpdateCursor(buildCustomEmojiHtml(emoji), inInputId);
+    insertHtmlAndUpdateCursor(buildCustomEmojiHtml(emoji), inInputId, isM);
   });
 
   const insertNextText = useLastCallback(() => {
@@ -646,14 +656,6 @@ const Composer: FC<OwnProps & StateProps> = ({
       sendMessageAction({ type: 'typing' });
     }
   }, [getHtml, isEditingRef, isForCurrentMessageList, isInStoryViewer, sendMessageAction]);
-
-  // On Input Box Focus and Blur
-  useEffect(() => {
-    // Close Symbol menu if Input is focused on mobile devices
-    if (isInputHasFocus && isMobile && isSymbolMenuOpen) {
-      closeSymbolMenu();
-    }
-  }, [isInputHasFocus]);
 
   const isAdmin = chat && isChatAdmin(chat);
 
@@ -1430,21 +1432,21 @@ const Composer: FC<OwnProps & StateProps> = ({
   }, [withBotMenuButton, getHtml, activeVoiceRecording]);
 
   const inputPlaceholderTimer = slowMode?.nextSendDate
-  ? {
-    langKey: 'SlowModeWait',
-    endsAt: slowMode.nextSendDate,
-  }
-  : stealthMode?.activeUntil && isInStoryViewer
     ? {
-      langKey: 'StealthModeActiveHint',
-      endsAt: stealthMode.activeUntil,
-    } 
-    : undefined;
+      langKey: 'SlowModeWait',
+      endsAt: slowMode.nextSendDate,
+    }
+    : stealthMode?.activeUntil && isInStoryViewer
+      ? {
+        langKey: 'StealthModeActiveHint',
+        endsAt: stealthMode.activeUntil,
+      }
+      : undefined;
 
   const isComposerHasFocus = isBotKeyboardOpen || isSymbolMenuOpen || isEmojiTooltipOpen || isSendAsMenuOpen
     || isMentionTooltipOpen || isInlineBotTooltipOpen || isBotCommandMenuOpen || isAttachMenuOpen
     || isStickerTooltipOpen || isChatCommandTooltipOpen || isCustomEmojiTooltipOpen || isBotMenuButtonOpen
-  || isCustomSendMenuOpen || Boolean(activeVoiceRecording) || attachments.length > 0 || isInputHasFocus;
+    || isCustomSendMenuOpen || Boolean(activeVoiceRecording) || attachments.length > 0 || isInputHasFocus;
   const isReactionSelectorOpen = isComposerHasFocus && !isReactionPickerOpen && isInStoryViewer && !isAttachMenuOpen
     && !isSymbolMenuOpen;
   const placeholderForForumAsMessages = chat?.isForum && chat?.isForumAsMessages && threadId === MAIN_THREAD_ID
@@ -1621,7 +1623,7 @@ const Composer: FC<OwnProps & StateProps> = ({
 
   const handleRemoveEffect = useLastCallback(() => { saveEffectInDraft({ chatId, threadId, effectId: undefined }); });
 
-  const handleStopEffect = useLastCallback(() => { hideEffectInComposer({ }); });
+  const handleStopEffect = useLastCallback(() => { hideEffectInComposer({}); });
 
   const onSend = useMemo(() => {
     switch (mainButtonState) {
@@ -1849,7 +1851,7 @@ const Composer: FC<OwnProps & StateProps> = ({
               onStickerSelect={handleStickerSelect}
               onCustomEmojiSelect={handleCustomEmojiSelect}
               onRemoveSymbol={removeSymbol}
-              onEmojiSelect={insertTextAndUpdateCursor}
+              onEmojiSelect={(emoji) => insertTextAndUpdateCursor(emoji, editableInputId, true)}
               closeBotCommandMenu={closeBotCommandMenu}
               closeSendAsMenu={closeSendAsMenu}
               isSymbolMenuForced={isSymbolMenuForced}
@@ -2205,7 +2207,7 @@ export default memo(withGlobal<OwnProps>(
     const noWebPage = selectNoWebPage(global, chatId, threadId);
 
     const areEffectsSupported = isChatWithUser && !isChatWithBot
-    && !isInScheduledList && !isChatWithSelf && type !== 'story' && chatId !== SERVICE_NOTIFICATIONS_USER_ID;
+      && !isInScheduledList && !isChatWithSelf && type !== 'story' && chatId !== SERVICE_NOTIFICATIONS_USER_ID;
     const canPlayEffect = selectPerformanceSettingsValue(global, 'stickerEffects');
     const shouldPlayEffect = tabState.shouldPlayEffectInComposer;
     const effectId = areEffectsSupported && draft?.effectId;

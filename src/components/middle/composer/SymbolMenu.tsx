@@ -26,6 +26,7 @@ import Menu from '../../ui/Menu';
 import Portal from '../../ui/Portal';
 import Transition from '../../ui/Transition';
 import CombinedEmojiPicker from '../../common/CombinedEmojiPicker';
+import CustomEmojiPicker from '../../common/CustomEmojiPicker';
 import GifPicker from './GifPicker';
 import StickerPicker from './StickerPicker';
 import SymbolMenuFooter, { SYMBOL_MENU_TAB_TITLES, SymbolMenuTabs } from './SymbolMenuFooter';
@@ -200,6 +201,7 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
           <CombinedEmojiPicker
             className="picker-tab"
             isHidden={!isOpen || !isActive}
+            idPrefix={idPrefix}
             loadAndPlay={isOpen && (isActive || isFrom)}
             onEmojiSelect={handleEmojiSelect}
             onCustomEmojiSelect={handleCustomEmojiSelect}

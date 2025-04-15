@@ -43,7 +43,6 @@ import pickerStyles from '../middle/composer/StickerPicker.module.scss';
 
 
 type OwnProps = {
-  chatId?: string;
   className?: string;
   idPrefix?: string;
   isHidden?: boolean;
@@ -53,7 +52,6 @@ type OwnProps = {
 };
 
 type StateProps = {
-  recentEmojis?: string[];
   recentCustomEmojiIds?: string[];
   customEmojisById?: Record<string, ApiSticker>;
   addedCustomEmojiIds?: string[];
@@ -81,14 +79,13 @@ const ICONS_BY_CATEGORY: Record<string, IconName> = {
   flags: 'flag',
 };
 
-const EMOJI_CATEGORY_SELECTOR_ID = 'emoji-category';
 const EMOJI_PICKER_ID = 'emoji-picker';
 const FOCUS_MARGIN = 3.25 * REM;
 const HEADER_CUSTOM_EMOJI_BUTTON_SIZE = 1.75 * REM;
 
 const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
   className,
-  recentEmojis,
+  idPrefix,
   recentCustomEmojiIds,
   customEmojisById,
   addedCustomEmojiIds,
@@ -96,7 +93,6 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
   isCurrentUserPremium,
   loadAndPlay,
   isHidden,
-  chatEmojiSetId,
   onEmojiSelect,
   onCustomEmojiSelect,
 }) => {
@@ -110,7 +106,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
   const [emojis, setEmojis] = useState<AllEmojis>();
   const [emojiCategories, setEmojiCategories] = useState<EmojiCategoryemojiData[]>();
 
-  // const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const EMOJI_CATEGORY_SELECTOR_ID = `${idPrefix}-emoji-category`;
 
   const { isMobile } = useAppLayout();
   const {
@@ -172,7 +168,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
     }
 
     return combined;
-  }, [emojiCategories, recentEmojis, recentCustomEmojiIds, addedCustomEmojiIds, stickerSetsById, lang]);
+  }, [emojiCategories, recentCustomEmojiIds, addedCustomEmojiIds, stickerSetsById, lang]);
 
   /**
    * Get the emojis from the emoji emojiData
@@ -372,6 +368,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
             return (
               <EmojiCategory
                 category={category as EmojiCategory}
+                idPrefix={EMOJI_CATEGORY_SELECTOR_ID}
                 index={i}
                 allEmojis={emojis}
                 observeIntersection={observeIntersectionForSet}
@@ -387,7 +384,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
 };
 
 export default memo(withGlobal<OwnProps>(
-  (global, { chatId }): StateProps => {
+  (global): StateProps => {
     const {
       stickers: {
         setsById: stickerSetsById,
@@ -401,7 +398,6 @@ export default memo(withGlobal<OwnProps>(
       recentCustomEmojis: recentCustomEmojiIds
     } = global;
 
-    const chatFullInfo = chatId ? selectChatFullInfo(global, chatId) : undefined;
     const isCurrentUserPremium = selectIsCurrentUserPremium(global);
 
     return {
@@ -410,7 +406,6 @@ export default memo(withGlobal<OwnProps>(
       addedCustomEmojiIds,
       stickerSetsById,
       isCurrentUserPremium,
-      chatEmojiSetId: chatFullInfo?.emojiSet?.id,
     };
   },
 )(CombinedEmojiPicker));

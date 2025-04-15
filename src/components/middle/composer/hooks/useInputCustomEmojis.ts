@@ -84,44 +84,46 @@ export default function useInputCustomEmojis(
         return;
       }
 
-      const canvasBounds = sharedCanvasRef.current!.getBoundingClientRect();
-      const elementBounds = element.getBoundingClientRect();
-      const x = round((elementBounds.left - canvasBounds.left) / canvasBounds.width, 4);
-      const y = round((elementBounds.top - canvasBounds.top) / canvasBounds.height, 4);
+      requestMeasure(() => {
+        const canvasBounds = sharedCanvasRef.current!.getBoundingClientRect();
+        const elementBounds = element.getBoundingClientRect();
+        const x = round((elementBounds.left - canvasBounds.left) / canvasBounds.width, 4);
+        const y = round((elementBounds.top - canvasBounds.top) / canvasBounds.height, 4);
 
-      if (playersById.current.has(playerId)) {
-        const player = playersById.current.get(playerId)!;
-        player.updatePosition(x, y);
-        return;
-      }
-
-      const customEmoji = global.customEmojis.byId[documentId];
-      if (!customEmoji) {
-        return;
-      }
-      const isHq = customEmoji?.stickerSetInfo && selectIsAlwaysHighPriorityEmoji(global, customEmoji.stickerSetInfo);
-      const renderId = [
-        prefixId, documentId, customColor, dpr,
-      ].filter(Boolean).join('_');
-
-      createPlayer({
-        customEmoji,
-        sharedCanvasRef,
-        sharedCanvasHqRef,
-        absoluteContainerRef,
-        renderId,
-        viewId: playerId,
-        mediaUrl,
-        isHq,
-        position: { x, y },
-        textColor: customColor,
-        colorFilter,
-      }).then((animation) => {
-        if (canPlayAnimatedEmojis) {
-          animation.play();
+        if (playersById.current.has(playerId)) {
+          const player = playersById.current.get(playerId)!;
+          player.updatePosition(x, y);
+          return;
         }
 
-        playersById.current.set(playerId, animation);
+        const customEmoji = global.customEmojis.byId[documentId];
+        if (!customEmoji) {
+          return;
+        }
+        const isHq = customEmoji?.stickerSetInfo && selectIsAlwaysHighPriorityEmoji(global, customEmoji.stickerSetInfo);
+        const renderId = [
+          prefixId, documentId, customColor, dpr,
+        ].filter(Boolean).join('_');
+
+        createPlayer({
+          customEmoji,
+          sharedCanvasRef,
+          sharedCanvasHqRef,
+          absoluteContainerRef,
+          renderId,
+          viewId: playerId,
+          mediaUrl,
+          isHq,
+          position: { x, y },
+          textColor: customColor,
+          colorFilter,
+        }).then((animation) => {
+          if (canPlayAnimatedEmojis) {
+            animation.play();
+          }
+
+          playersById.current.set(playerId, animation);
+        });
       });
     });
 
