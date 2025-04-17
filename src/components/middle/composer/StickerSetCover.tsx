@@ -62,7 +62,7 @@ const StickerSetCover: FC<OwnProps> = ({
   const hasOnlyStaticThumb = hasStaticThumb && !hasVideoThumb && !hasAnimatedThumb && !thumbCustomEmojiId;
 
   const shouldFallbackToStatic = hasOnlyStaticThumb || (hasVideoThumb && !IS_WEBM_SUPPORTED && !hasAnimatedThumb);
-  const staticHash = shouldFallbackToStatic && getStickerMediaHash(stickerSet.stickers![0], 'preview');
+  const staticHash = shouldFallbackToStatic && stickerSet.stickers && getStickerMediaHash(stickerSet.stickers[0], 'preview');
   const staticMediaData = useMedia(staticHash, !isIntersecting);
 
   const mediaHash = ((hasThumbnail && !shouldFallbackToStatic) || hasAnimatedThumb) && `stickerSet${stickerSet.id}`;

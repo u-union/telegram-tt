@@ -37,7 +37,7 @@ import Icon from './icons/Icon';
 import Loading from '../ui/Loading';
 import StickerButton from './StickerButton';
 import StickerSet from './StickerSet';
-import EmojiSearch from './EmojiSearch';
+import EmojiSearch from './pickers/EmojiSearch';
 import HorizontalTabSelector from '../ui/HorizontalTabSelector';
 import EmojiCategory from '../middle/composer/EmojiCategory';
 
@@ -113,7 +113,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
   const [emojiCategories, setEmojiCategories] = useState<EmojiCategoryemojiData[]>();
 
   // For search functionality
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string[]>([]);
   const [searchMode, setSearchMode] = useState(false);
 
   const EMOJI_CATEGORY_SELECTOR_ID = `${idPrefix}-emoji-category`;
@@ -184,17 +184,17 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
    * Search results for emojis
    */
   const searchResults: EmojiCategoryemojiData[] = useDerivedState(() => {
-    if (!searchQuery) {
+    if (!searchQuery?.length) {
       return [];
     }
 
     // Find emojis that match the search query
-    const searchQueryLower = searchQuery.toLowerCase();
+    const searchQueryLower = searchQuery.map((query) => query.toLowerCase());
     const emojiResults = Object.entries(emojis || {})
       .map(([_, emoji]) => {
         const filteredEmoji = 'id' in emoji ? emoji : emoji[1];
         return filteredEmoji.names
-          .some((name) => name.includes(searchQueryLower)) ?
+          .some((name) => searchQueryLower.some((query) => name.includes(query))) ?
           filteredEmoji : null;
       })
       .filter(Boolean);
@@ -215,7 +215,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
     //   })
     //   .filter(Boolean);
 
-    // Use all custom emojis
+    // Use custom emojis by Id
     const customEmojisResults = Object.values(customEmojisById || {})
       .filter((sticker) => {
         if (sticker?.emoji) {
@@ -225,7 +225,6 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
       });
 
 
-    console.warn('customEmojisResults', customEmojisResults.length);
     // Combine results with added custom emojis
     return [
       {
@@ -404,9 +403,11 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
           setSearchQuery={setSearchQuery}
           searchMode={searchMode}
           setSearchMode={setSearchMode}
+          placeholderSuffix={'Emoji'}
+          debounceTime={250}
         />
 
-        {!(searchMode && searchQuery) ?
+        {!(searchMode && searchQuery?.length) ?
           allCategories.map((category, i) => {
             const commonProps = {
               loadAndPlay: !!canLoadAndPlay,
@@ -468,20 +469,20 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
           <div className='EmojiPicker-search-results'>
             {searchResults?.some(r => r.emojis.length) ?
               <> {searchResults.map((category, i) => {
-                if (category.type === 'emoji' && category.emojis.length) {
-                  return (
-                    <EmojiCategory
-                      key={category.id}
-                      category={category as EmojiCategory}
-                      index={i}
-                      allEmojis={emojis}
-                      observeIntersection={observeIntersectionForSet}
-                      shouldRender
-                      shouldHideHeader
-                      onEmojiSelect={handleEmojiSelect}
-                    />
-                  );
-                }
+                // if (category.type === 'emoji' && category.emojis.length) {
+                //   return (
+                //     <EmojiCategory
+                //       key={category.id}
+                //       category={category as EmojiCategory}
+                //       index={i}
+                //       allEmojis={emojis}
+                //       observeIntersection={observeIntersectionForSet}
+                //       shouldRender
+                //       shouldHideHeader
+                //       onEmojiSelect={handleEmojiSelect}
+                //     />
+                //   );
+                // }
                 if (category.type === 'custom' && category.emojis.length) {
                   const stickerSet: StickerSetOrReactionsSetOrRecent = {
                     id: POPULAR_SYMBOL_SET_ID,
@@ -494,10 +495,10 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
 
                   return (
                     <>
-                      {
+                      {/* {
                         searchResults.every((c) => c.emojis.length) &&
                         <div className="EmojiPicker-search-results-divider" />
-                      }
+                      } */}
                       <StickerSet
                         idPrefix={''}
                         key={category.id}

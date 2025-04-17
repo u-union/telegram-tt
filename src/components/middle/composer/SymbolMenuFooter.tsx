@@ -33,7 +33,7 @@ export const SYMBOL_MENU_TAB_TITLES: Record<SymbolMenuTabs, string> = {
 
 const SYMBOL_MENU_TAB_ICONS = {
   [SymbolMenuTabs.Emoji]: 'icon-smile',
-  [SymbolMenuTabs.Stickers]: 'icon-stickers',
+  [SymbolMenuTabs.Stickers]: 'icon-stickers-face',
   [SymbolMenuTabs.GIFs]: 'icon-gifs',
 };
 

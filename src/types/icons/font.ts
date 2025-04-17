@@ -136,6 +136,17 @@ export type FontIconName =
   | 'more'
   | 'move-caption-down'
   | 'move-caption-up'
+  | 'msg_emoji_angry'
+  | 'msg_emoji_dislike'
+  | 'msg_emoji_haha'
+  | 'msg_emoji_heart'
+  | 'msg_emoji_like'
+  | 'msg_emoji_neutral'
+  | 'msg_emoji_omg'
+  | 'msg_emoji_party'
+  | 'msg_emoji_sad'
+  | 'msg_emoji_tongue'
+  | 'msg_emoji_what'
   | 'mute'
   | 'muted'
   | 'my-notes'
@@ -210,6 +221,7 @@ export type FontIconName =
   | 'stats'
   | 'stealth-future'
   | 'stealth-past'
+  | 'stickers-face'
   | 'stickers'
   | 'stop-raising-hand'
   | 'stop'
@@ -391,6 +403,17 @@ export enum Icons {
   More = 'more',
   MoveCaptionDown = 'move-caption-down',
   MoveCaptionUp = 'move-caption-up',
+  MsgEmojiAngry = 'msg_emoji_angry',
+  MsgEmojiDislike = 'msg_emoji_dislike',
+  MsgEmojiHaha = 'msg_emoji_haha',
+  MsgEmojiHeart = 'msg_emoji_heart',
+  MsgEmojiLike = 'msg_emoji_like',
+  MsgEmojiNeutral = 'msg_emoji_neutral',
+  MsgEmojiOmg = 'msg_emoji_omg',
+  MsgEmojiParty = 'msg_emoji_party',
+  MsgEmojiSad = 'msg_emoji_sad',
+  MsgEmojiTongue = 'msg_emoji_tongue',
+  MsgEmojiWhat = 'msg_emoji_what',
   Mute = 'mute',
   Muted = 'muted',
   MyNotes = 'my-notes',
@@ -465,6 +488,7 @@ export enum Icons {
   Stats = 'stats',
   StealthFuture = 'stealth-future',
   StealthPast = 'stealth-past',
+  StickersFace = 'stickers-face',
   Stickers = 'stickers',
   StopRaisingHand = 'stop-raising-hand',
   Stop = 'stop',

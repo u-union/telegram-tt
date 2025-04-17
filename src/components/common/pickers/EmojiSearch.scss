@@ -72,20 +72,23 @@
   &-overlay {
     display: flex;
     align-items: center;
-    pointer-events: none;
 
     position: absolute;
     left: 0;
     top: 0;
     height: 100%;
     width: 100%;
+    pointer-events: none;
+
+    overflow-x: scroll;
+    overflow-y: hidden;
 
     color: var(--color-text-secondary);
     opacity: 0.65;
     font-size: 1.1rem;
 
     &-placeholder {
-      width: 50%;
+      min-width: 8rem;
       height: 100%;
       align-content: center;
       padding-left: 0.05rem;
@@ -98,6 +101,51 @@
       &.placeholder-hidden {
         opacity: 0;
         transform: translateX(1rem);
+      }
+    }
+
+    &-buttons {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      height: 100%;
+      gap: 0.1rem;
+      pointer-events: all;
+
+      opacity: 1;
+      transition: opacity 0.2s ease-in-out;
+      &-hidden {
+        opacity: 0;
+      }
+    }
+
+    &-button {
+      --button-size: 1.75rem;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      height: auto;
+      width: var(--button-size) !important;
+
+      .icon {
+        height: var(--button-size);
+        line-height: calc(var(--button-size) - 0.6rem);
+        font-size: calc(var(--height) * 0.9) !important;
+
+        transition: font-size 0.2s ease-in-out;
+
+        &:hover {
+          font-size: var(--height) !important;
+        }
+      }
+
+      &-active {
+        .icon {
+          color: var(--color-primary);
+          font-size: var(--height) !important;
+        }
       }
     }
   }
