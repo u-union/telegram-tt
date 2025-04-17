@@ -201,6 +201,7 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
           <CombinedEmojiPicker
             className="picker-tab"
             isHidden={!isOpen || !isActive}
+            chatId={chatId}
             idPrefix={idPrefix}
             loadAndPlay={isOpen && (isActive || isFrom)}
             onEmojiSelect={handleEmojiSelect}

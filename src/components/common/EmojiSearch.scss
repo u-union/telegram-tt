@@ -1,0 +1,104 @@
+.EmojiSearch {
+  --height: 2.5rem;
+  --icon-size: 1.25rem;
+
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  height: var(--height);
+
+  color: var(--color-text-secondary);
+
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+
+  background-color: rgba(0, 199, 62, 0.06);
+  border-radius: 0.75rem;
+
+  &-icon-container {
+    position: relative;
+    font-size: 1.6rem;
+    width: 2.25rem;
+    height: 100%;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+
+    .EmojiSearch-icon {
+      position: absolute;
+      height: 100%;
+      right: 0;
+      align-content: center;
+
+      opacity: 0;
+      &-search {
+        rotate: 180deg;
+      }
+      &-close {
+        rotate: -180deg;
+      }
+
+      transition:
+        rotate 0.2s ease-in,
+        opacity 0.2s ease-in;
+
+      &.icon-active {
+        opacity: 1;
+        rotate: 0deg;
+      }
+    }
+  }
+
+  &-input {
+    flex: 1;
+    height: 100%;
+    position: relative;
+
+    margin-left: 0.15rem;
+    margin-right: 1rem;
+    align-content: center;
+
+    input {
+      width: 100%;
+      height: 100%;
+      padding-left: 0.1rem;
+      padding-right: 0rem;
+      border: none;
+      background: none;
+      outline: none;
+    }
+  }
+
+  &-overlay {
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+
+    color: var(--color-text-secondary);
+    opacity: 0.65;
+    font-size: 1.1rem;
+
+    &-placeholder {
+      width: 50%;
+      height: 100%;
+      align-content: center;
+      padding-left: 0.05rem;
+      padding-top: 0.1rem;
+
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+
+      &.placeholder-hidden {
+        opacity: 0;
+        transform: translateX(1rem);
+      }
+    }
+  }
+}

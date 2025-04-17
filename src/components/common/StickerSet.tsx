@@ -225,7 +225,7 @@ const StickerSet: FC<OwnProps> = ({
   }, [calculateItemsPerRow]);
 
   useEffect(() => {
-    if (shouldRender && !stickerSet.stickers?.length && !stickerSet.reactions?.length && stickerSet.accessHash) {
+    if (shouldRender && !isRecent && !stickerSet.stickers?.length && !stickerSet.reactions?.length && stickerSet.accessHash) {
       loadStickers({
         stickerSetInfo: {
           id: stickerSet.id,
@@ -276,7 +276,7 @@ const StickerSet: FC<OwnProps> = ({
       }
     >
       {!shouldHideHeader && (
-        <div className="symbol-set-header">
+        <div className={buildClassName('symbol-set-header', withAddSetButton && 'with-add-button')}>
           <p className={buildClassName('symbol-set-title', withAddSetButton && 'symbol-set-title-external')}>
             {isLocked && <Icon name="lock-badge" className="symbol-set-locked-icon" />}
             <span className="symbol-set-name">{stickerSet.title}</span>

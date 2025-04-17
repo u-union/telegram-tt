@@ -587,7 +587,7 @@ const Composer: FC<OwnProps & StateProps> = ({
   });
 
   const insertCustomEmojiAndUpdateCursor = useLastCallback((emoji: ApiSticker, inInputId: string = editableInputId) => {
-    insertHtmlAndUpdateCursor(buildCustomEmojiHtml(emoji), inInputId, isM);
+    insertHtmlAndUpdateCursor(buildCustomEmojiHtml(emoji), inInputId, isMobile);
   });
 
   const insertNextText = useLastCallback(() => {

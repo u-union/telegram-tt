@@ -29,10 +29,11 @@ type OwnProps = {
   observeIntersection: ObserveFn;
   shouldRender: boolean;
   onEmojiSelect: (emoji: string, name: string) => void;
+  shouldHideHeader?: boolean;
 };
 
 const EmojiCategory: FC<OwnProps> = ({
-  idPrefix, category, index, allEmojis, observeIntersection, shouldRender, onEmojiSelect,
+  idPrefix, category, index, allEmojis, observeIntersection, shouldRender, onEmojiSelect, shouldHideHeader
 }) => {
   // eslint-disable-next-line no-null/no-null
   const ref = useRef<HTMLDivElement>(null);
@@ -59,11 +60,13 @@ const EmojiCategory: FC<OwnProps> = ({
       id={`${idPrefix ? `${idPrefix}` : 'emoji-category'}-${index}`}
       className="symbol-set"
     >
-      <div className="symbol-set-header">
-        <p className="symbol-set-name" dir="auto">
-          {lang(category.id === RECENT_SYMBOL_SET_ID ? 'RecentStickers' : `Emoji${index}`)}
-        </p>
-      </div>
+      {!shouldHideHeader &&
+        <div className="symbol-set-header">
+          <p className="symbol-set-name" dir="auto">
+            {lang(category.id === RECENT_SYMBOL_SET_ID ? 'RecentStickers' : `Emoji${index}`)}
+          </p>
+        </div>
+      }
       <div
         className={buildClassName('symbol-set-container', transitionClassNames)}
         style={`height: ${height}px;`}
