@@ -39,6 +39,11 @@
   :global(.bubble) {
     border-radius: var(--border-radius-default) !important;
   }
+  
+  :global(.picker-disabled) {
+    height: calc(100% - 4.5rem) !important; // TODO: Create more flexible/scalable solution
+                                 // for search/height/main dimen
+  }
 
   :global(.symbol-set-header) {
     justify-content: center;

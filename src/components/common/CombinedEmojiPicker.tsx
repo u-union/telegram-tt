@@ -465,65 +465,43 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
                 />
               );
             }
-          }) :
-          <div className='EmojiPicker-search-results'>
-            {searchResults?.some(r => r.emojis.length) ?
-              <> {searchResults.map((category, i) => {
-                // if (category.type === 'emoji' && category.emojis.length) {
-                //   return (
-                //     <EmojiCategory
-                //       key={category.id}
-                //       category={category as EmojiCategory}
-                //       index={i}
-                //       allEmojis={emojis}
-                //       observeIntersection={observeIntersectionForSet}
-                //       shouldRender
-                //       shouldHideHeader
-                //       onEmojiSelect={handleEmojiSelect}
-                //     />
-                //   );
-                // }
-                if (category.type === 'custom' && category.emojis.length) {
-                  const stickerSet: StickerSetOrReactionsSetOrRecent = {
-                    id: SEARCH_RESULT_SET_ID,
-                    accessHash: '0',
-                    title: '',
-                    stickers: category.emojis as ApiSticker[],
-                    count: category.emojis.length,
-                    isEmoji: true,
-                  };
+        }) : searchResults?.some((r) => r.emojis.length) ? (
+          <div className="EmojiPicker-search-results">
+            {searchResults.map((category, i) => {
+              if (category.type === 'custom' && category.emojis.length) {
+                const stickerSet: StickerSetOrReactionsSetOrRecent = {
+                  id: SEARCH_RESULT_SET_ID,
+                  accessHash: '0',
+                  title: '',
+                  stickers: category.emojis as ApiSticker[],
+                  count: category.emojis.length,
+                  isEmoji: true,
+                };
 
-                  return (
-                    <>
-                      {/* {
-                        searchResults.every((c) => c.emojis.length) &&
-                        <div className="EmojiPicker-search-results-divider" />
-                      } */}
-                      <StickerSet
-                        idPrefix={''}
-                        key={category.id}
-                        stickerSet={stickerSet}
-                        isSavedMessages
-                        loadAndPlay={!!canLoadAndPlay}
-                        index={i}
-                        isCurrentUserPremium
-                        shouldHideHeader
-                        isNearActive
-                        observeIntersection={observeIntersectionForSet}
-                        observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
-                        observeIntersectionForShowingItems={observeIntersectionForShowingItems}
-                        onStickerSelect={onCustomEmojiSelect}
-                      />
-                    </>
-                  );
-                }
-              })} </> :
-              <div className='EmojiPicker-search-results-placeholder'>
-                {'Nothing found'}
-              </div>
-            }
+                return (
+                  <StickerSet
+                    idPrefix=""
+                    key={category.id}
+                    stickerSet={stickerSet}
+                    isSavedMessages
+                    loadAndPlay={!!canLoadAndPlay}
+                    index={i}
+                    isCurrentUserPremium={isCurrentUserPremium}
+                    shouldHideHeader
+                    isNearActive
+                    observeIntersection={observeIntersectionForSet}
+                    observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
+                    observeIntersectionForShowingItems={observeIntersectionForShowingItems}
+                    onStickerSelect={onCustomEmojiSelect}
+                  />
+                );
+              }
+              return null;
+            })}
           </div>
-        }
+        ) : (
+          <div className="picker-disabled">No Emojis Found.</div>
+        )}
       </div>
     </div>
   );

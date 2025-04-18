@@ -99,7 +99,7 @@
     height: 100%;
 
     .Loading {
-      height: var(--symbol-menu-height);
+      height: 100%;
     }
   }
 
@@ -161,7 +161,7 @@
   }
 
   .picker-disabled {
-    height: var(--symbol-menu-height);
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;

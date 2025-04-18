@@ -65,14 +65,14 @@ const GifPicker: FC<OwnProps & StateProps> = ({
 
   return (
     <div>
-      <div
-        ref={containerRef}
-        className={buildClassName('GifPicker', className, IS_TOUCH_ENV ? 'no-scrollbar' : 'custom-scroll')}
-      >
-        {!canSendGifs ? (
-          <div className="picker-disabled">Sending GIFs is not allowed in this chat.</div>
-        ) : canRenderContents && savedGifs && savedGifs.length ? (
-          savedGifs.map((gif) => (
+      {!canSendGifs ? (
+        <div className="picker-disabled">Sending GIFs is not allowed in this chat.</div>
+      ) : canRenderContents && savedGifs && savedGifs.length ? (
+        <div
+          ref={containerRef}
+          className={buildClassName('GifPicker', className, IS_TOUCH_ENV ? 'no-scrollbar' : 'custom-scroll')}
+        >
+          {savedGifs.map((gif) => (
             <GifButton
               key={gif.id}
               gif={gif}
@@ -82,16 +82,16 @@ const GifPicker: FC<OwnProps & StateProps> = ({
               onUnsaveClick={handleUnsaveClick}
               isSavedMessages={isSavedMessages}
             />
-          ))
-        ) : canRenderContents && savedGifs ? (
-          <div className="picker-disabled">No saved GIFs.</div>
-        ) : (
-          <Loading />
-        )}
-      </div>
+          ))}
+        </div>
+      ) : canRenderContents && savedGifs ? (
+        <div className="picker-disabled">No saved GIFs.</div>
+      ) : (
+        <Loading />
+      )}
     </div>
   );
-};
+}
 
 export default memo(withGlobal<OwnProps>(
   (global): StateProps => {

@@ -44,6 +44,11 @@
         }
       }
     }
+
+    .picker-disabled {
+      height: calc(100% - 4.5rem) !important; // TODO: Create more flexible/scalable solution
+                                   // for search/height/main dimen
+    }
   }
 
   &-header {

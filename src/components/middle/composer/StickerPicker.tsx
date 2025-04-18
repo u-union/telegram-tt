@@ -411,58 +411,64 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
           debounceTime={250}
         />
 
-        {!(searchMode && searchQuery?.length) ? allSets.map((stickerSet, i) => (
-          <StickerSet
-            key={stickerSet.id}
-            stickerSet={stickerSet}
-            loadAndPlay={Boolean(canAnimate && loadAndPlay)}
-            noContextMenus={noContextMenus}
-            index={i}
-            idPrefix={prefix}
-            observeIntersection={observeIntersectionForSet}
-            observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
-            observeIntersectionForShowingItems={observeIntersectionForShowingItems}
-            isNearActive={activeSetIndex >= i - 1 && activeSetIndex <= i + 1}
-            favoriteStickers={favoriteStickers}
-            isSavedMessages={isSavedMessages}
-            isCurrentUserPremium={isCurrentUserPremium}
-            isTranslucent={isTranslucent}
-            isChatStickerSet={stickerSet.id === chatStickerSetId}
-            onStickerSelect={handleStickerSelect}
-            onStickerUnfave={handleStickerUnfave}
-            onStickerFave={handleStickerFave}
-            onStickerRemoveRecent={handleRemoveRecentSticker}
-            forcePlayback
-            shouldHideHeader={stickerSet.id === EFFECT_EMOJIS_SET_ID || stickerSet.id === RECENT_SYMBOL_SET_ID}
-          />
-        )) :
-          <StickerSet
-            stickerSet={{
-              id: SEARCH_RESULT_SET_ID,
-              accessHash: '0',
-              title: lang('SearchResult'),
-              stickers: searchResults,
-              count: searchResults.length,
-            }}
-            loadAndPlay={Boolean(canAnimate && loadAndPlay)}
-            noContextMenus={noContextMenus}
-            index={0}
-            idPrefix={prefix}
-            observeIntersection={observeIntersectionForSet}
-            observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
-            observeIntersectionForShowingItems={observeIntersectionForShowingItems}
-            isNearActive
-            isSavedMessages={isSavedMessages}
-            isCurrentUserPremium={isCurrentUserPremium}
-            isTranslucent={isTranslucent}
-            onStickerSelect={handleStickerSelect}
-            onStickerUnfave={handleStickerUnfave}
-            onStickerFave={handleStickerFave}
-            onStickerRemoveRecent={handleRemoveRecentSticker}
-            forcePlayback
-            shouldHideHeader
-          />
-        }
+        {searchMode && searchQuery?.length ? (
+          searchResults.length > 0 ? (
+            <StickerSet
+              stickerSet={{
+          id: SEARCH_RESULT_SET_ID,
+          accessHash: '0',
+          title: lang('SearchResult'),
+          stickers: searchResults,
+          count: searchResults.length,
+              }}
+              loadAndPlay={Boolean(canAnimate && loadAndPlay)}
+              noContextMenus={noContextMenus}
+              index={0}
+              idPrefix={prefix}
+              observeIntersection={observeIntersectionForSet}
+              observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
+              observeIntersectionForShowingItems={observeIntersectionForShowingItems}
+              isNearActive
+              isSavedMessages={isSavedMessages}
+              isCurrentUserPremium={isCurrentUserPremium}
+              isTranslucent={isTranslucent}
+              onStickerSelect={handleStickerSelect}
+              onStickerUnfave={handleStickerUnfave}
+              onStickerFave={handleStickerFave}
+              onStickerRemoveRecent={handleRemoveRecentSticker}
+              forcePlayback
+              shouldHideHeader
+            />
+          ) : (
+            <div className="picker-disabled">No Stickers Found.</div>
+          )
+        ) : (
+          allSets.map((stickerSet, i) => (
+            <StickerSet
+              key={stickerSet.id}
+              stickerSet={stickerSet}
+              loadAndPlay={Boolean(canAnimate && loadAndPlay)}
+              noContextMenus={noContextMenus}
+              index={i}
+              idPrefix={prefix}
+              observeIntersection={observeIntersectionForSet}
+              observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
+              observeIntersectionForShowingItems={observeIntersectionForShowingItems}
+              isNearActive={activeSetIndex >= i - 1 && activeSetIndex <= i + 1}
+              favoriteStickers={favoriteStickers}
+              isSavedMessages={isSavedMessages}
+              isCurrentUserPremium={isCurrentUserPremium}
+              isTranslucent={isTranslucent}
+              isChatStickerSet={stickerSet.id === chatStickerSetId}
+              onStickerSelect={handleStickerSelect}
+              onStickerUnfave={handleStickerUnfave}
+              onStickerFave={handleStickerFave}
+              onStickerRemoveRecent={handleRemoveRecentSticker}
+              forcePlayback
+              shouldHideHeader={stickerSet.id === EFFECT_EMOJIS_SET_ID || stickerSet.id === RECENT_SYMBOL_SET_ID}
+            />
+          ))
+        )}
       </div>
     </div>
   );
