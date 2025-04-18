@@ -1,8 +1,16 @@
 @use "../../../styles/mixins";
 
 .root {
-  --color-primary: var(--color-text);
   --emoji-size: 4.5rem;
+  --emoji-color-primary: var(--color-code-own); // fix
+  --emoji-color-background: rgba(0, 199, 62, 0.06);
+  --emoji-header-size: 1.7rem;
+
+  --header-height: 3rem;
+
+  &:global(.no-header) {
+    --header-height: 0rem;
+  }
 
   height: 100%;
 }
@@ -11,16 +19,14 @@
   --symbol-set-gap-size: 0.25rem;
 
   position: relative;
-  height: 100%;
-
-  &.hasHeader {
-    height: calc(100% - 3rem);
-  }
+  height: calc(100% - var(--header-height));
+  transition: height 250ms ease-in-out;
 
   overflow-y: auto;
   overflow-x: hidden;
 
   padding: 0.5rem 0.25rem;
+  padding-top: 0rem;
 
   @include mixins.adapt-padding-to-scrollbar(0.25rem);
 
@@ -33,10 +39,17 @@
   :global(.bubble) {
     border-radius: var(--border-radius-default) !important;
   }
+
+  :global(.symbol-set-header) {
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
 }
 
 .header {
-  height: 3rem;
+  height: var(--header-height);
+  transition: height 250ms ease-in-out;
+
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
@@ -91,6 +104,10 @@
   padding: 0;
   border-radius: var(--border-radius-messages-small) !important;
 
+  :global(.icon) {
+    font-size: var(--emoji-header-size) !important;
+  }
+
   &:global(.StickerButton) {
     background-size: 1.875rem;
 
@@ -104,8 +121,8 @@
   }
 
   &.activated {
-    color: var(--color-text-lighter);
-    background-color: var(--color-interactive-element-hover);
+    color: var(--emoji-color-primary);
+    background-color: var(--emoji-color-background);
 
     :global(.theme-dark) & {
       --color-text-lighter: var(--color-text);

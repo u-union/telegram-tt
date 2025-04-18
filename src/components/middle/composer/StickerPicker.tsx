@@ -2,6 +2,7 @@ import type { FC } from '../../../lib/teact/teact';
 import React, {
   memo, useEffect, useMemo,
   useRef,
+  useState,
 } from '../../../lib/teact/teact';
 import { getActions, withGlobal } from '../../../global';
 
@@ -14,6 +15,7 @@ import {
   EFFECT_STICKERS_SET_ID,
   FAVORITE_SYMBOL_SET_ID,
   RECENT_SYMBOL_SET_ID,
+  SEARCH_RESULT_SET_ID,
   SLIDE_TRANSITION_DURATION,
   STICKER_PICKER_MAX_SHARED_COVERS,
   STICKER_SIZE_PICKER_HEADER,
@@ -36,11 +38,14 @@ import useScrolledState from '../../../hooks/useScrolledState';
 import useSendMessageAction from '../../../hooks/useSendMessageAction';
 import { useStickerPickerObservers } from '../../common/hooks/useStickerPickerObservers';
 import useAsyncRendering from '../../right/hooks/useAsyncRendering';
+import useDerivedState from '../../../hooks/useDerivedState';
+import useEmojiData from '../../common/hooks/useEmojiData';
 
 import Avatar from '../../common/Avatar';
 import Icon from '../../common/icons/Icon';
 import StickerButton from '../../common/StickerButton';
 import StickerSet from '../../common/StickerSet';
+import EmojiSearch from '../../common/pickers/EmojiSearch';
 import Button from '../../ui/Button';
 import Loading from '../../ui/Loading';
 import StickerSetCover from './StickerSetCover';
@@ -169,16 +174,6 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
 
     const defaultSets = [];
 
-    if (favoriteStickers.length) {
-      defaultSets.push({
-        id: FAVORITE_SYMBOL_SET_ID,
-        accessHash: '0',
-        title: lang('FavoriteStickers'),
-        stickers: favoriteStickers,
-        count: favoriteStickers.length,
-      });
-    }
-
     if (recentStickers.length) {
       defaultSets.push({
         id: RECENT_SYMBOL_SET_ID,
@@ -226,7 +221,7 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
 
   const canRenderContents = useAsyncRendering([], SLIDE_TRANSITION_DURATION);
   const shouldRenderContents = areAddedLoaded && canRenderContents
-  && !noPopulatedSets && (canSendStickers || isForEffects);
+    && !noPopulatedSets && (canSendStickers || isForEffects);
 
   useHorizontalScroll(headerRef, !shouldRenderContents || !headerRef.current);
 
@@ -269,6 +264,35 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
   });
 
   if (!chat) return undefined;
+
+  /**
+   * Temporary search result
+   * (After: create universal search engine for Menus with 
+   * search input and result containers)
+   */
+  const emojiData = useEmojiData();
+  const [searchMode, setSearchMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string[]>([]);
+
+  const searchResults: ApiSticker[] = useDerivedState(() => {
+    if (!searchQuery.length) return MEMO_EMPTY_ARRAY;
+
+    const searchQueryLower = searchQuery.map((query) => query.toLowerCase());
+    const foundNativeEmojis = Object.values(emojiData?.emojis || {})
+      .map((emoji) => {
+        return emoji.names
+          .some((name) => searchQueryLower.some((query) => name.includes(query))) ?
+          emoji : null;
+      })
+      .filter(Boolean);
+
+    return allSets
+      .flatMap((stickerSet) => {
+        return stickerSet.stickers?.filter((sticker) => {
+          return foundNativeEmojis.some((emoji) => emoji.native === sticker.emoji);
+        }) || [];
+      });
+  }, [allSets, searchQuery]);
 
   function renderCover(stickerSet: StickerSetOrReactionsSetOrRecent, index: number) {
     const firstSticker = stickerSet.stickers?.[0];
@@ -331,7 +355,12 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
     }
   }
 
-  const fullClassName = buildClassName(styles.root, className);
+  const fullClassName =
+    buildClassName(
+      styles.root,
+      className,
+      (isForEffects || searchMode) && 'no-header'
+    );
 
   if (!shouldRenderContents) {
     return (
@@ -355,14 +384,12 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
 
   return (
     <div className={fullClassName}>
-      { !isForEffects && (
-        <div ref={headerRef} className={headerClassName}>
-          <div className="shared-canvas-container">
-            <canvas ref={sharedCanvasRef} className="shared-canvas" />
-            {allSets.map(renderCover)}
-          </div>
+      <div ref={headerRef} className={headerClassName}>
+        <div className="shared-canvas-container">
+          <canvas ref={sharedCanvasRef} className="shared-canvas" />
+          {allSets.map(renderCover)}
         </div>
-      ) }
+      </div>
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
@@ -371,11 +398,20 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
           buildClassName(
             styles.main,
             IS_TOUCH_ENV ? 'no-scrollbar' : 'custom-scroll',
-            !isForEffects && styles.hasHeader,
           )
         }
       >
-        {allSets.map((stickerSet, i) => (
+        <EmojiSearch
+          className="EmojiPicker-search"
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchMode={searchMode}
+          setSearchMode={setSearchMode}
+          placeholderSuffix={'Stickers'}
+          debounceTime={250}
+        />
+
+        {!(searchMode && searchQuery?.length) ? allSets.map((stickerSet, i) => (
           <StickerSet
             key={stickerSet.id}
             stickerSet={stickerSet}
@@ -397,9 +433,36 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
             onStickerFave={handleStickerFave}
             onStickerRemoveRecent={handleRemoveRecentSticker}
             forcePlayback
-            shouldHideHeader={stickerSet.id === EFFECT_EMOJIS_SET_ID}
+            shouldHideHeader={stickerSet.id === EFFECT_EMOJIS_SET_ID || stickerSet.id === RECENT_SYMBOL_SET_ID}
           />
-        ))}
+        )) :
+          <StickerSet
+            stickerSet={{
+              id: SEARCH_RESULT_SET_ID,
+              accessHash: '0',
+              title: lang('SearchResult'),
+              stickers: searchResults,
+              count: searchResults.length,
+            }}
+            loadAndPlay={Boolean(canAnimate && loadAndPlay)}
+            noContextMenus={noContextMenus}
+            index={0}
+            idPrefix={prefix}
+            observeIntersection={observeIntersectionForSet}
+            observeIntersectionForPlayingItems={observeIntersectionForPlayingItems}
+            observeIntersectionForShowingItems={observeIntersectionForShowingItems}
+            isNearActive
+            isSavedMessages={isSavedMessages}
+            isCurrentUserPremium={isCurrentUserPremium}
+            isTranslucent={isTranslucent}
+            onStickerSelect={handleStickerSelect}
+            onStickerUnfave={handleStickerUnfave}
+            onStickerFave={handleStickerFave}
+            onStickerRemoveRecent={handleRemoveRecentSticker}
+            forcePlayback
+            shouldHideHeader
+          />
+        }
       </div>
     </div>
   );

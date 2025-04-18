@@ -11,8 +11,8 @@ import { StickerSetOrReactionsSetOrRecent } from '../../types';
 
 import {
   MENU_TRANSITION_DURATION,
-  POPULAR_SYMBOL_SET_ID,
   RECENT_SYMBOL_SET_ID,
+  SEARCH_RESULT_SET_ID,
   SLIDE_TRANSITION_DURATION,
 } from '../../config';
 import { REM } from './helpers/mediaDimensions';
@@ -334,7 +334,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
   const containerClassName = buildClassName(
     'EmojiPicker',
     className,
-    searchMode && 'search-focused',
+    searchMode && 'no-header',
   );
 
   if (!shouldRenderContent) {
@@ -485,7 +485,7 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
                 // }
                 if (category.type === 'custom' && category.emojis.length) {
                   const stickerSet: StickerSetOrReactionsSetOrRecent = {
-                    id: POPULAR_SYMBOL_SET_ID,
+                    id: SEARCH_RESULT_SET_ID,
                     accessHash: '0',
                     title: '',
                     stickers: category.emojis as ApiSticker[],

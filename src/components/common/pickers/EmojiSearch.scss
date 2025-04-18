@@ -13,7 +13,7 @@
   margin-top: 0.5rem;
   margin-bottom: 1rem;
 
-  background-color: rgba(0, 199, 62, 0.06);
+  background-color: var(--emoji-color-background);
   border-radius: 0.75rem;
 
   &-icon-container {
@@ -88,7 +88,7 @@
     font-size: 1.1rem;
 
     &-placeholder {
-      min-width: 8rem;
+      min-width: 9rem;
       height: 100%;
       align-content: center;
       padding-left: 0.05rem;
@@ -143,7 +143,7 @@
 
       &-active {
         .icon {
-          color: var(--color-primary);
+          color: var(--emoji-color-primary);
           font-size: var(--height) !important;
         }
       }

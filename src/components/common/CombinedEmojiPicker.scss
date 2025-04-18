@@ -2,11 +2,14 @@
 
 .EmojiPicker {
   height: 100%;
-  --emoji-size: 2.25rem;
-  --color-primary: var(--color-code-own); // fix
 
+  --emoji-size: 2.25em;
+  --emoji-color-primary: var(--color-code-own); // fix
+  --emoji-color-background: rgba(0, 199, 62, 0.06);
+  --emoji-header-size: 1.7rem;
   --header-height: 3rem;
-  &.search-focused {
+
+  &.no-header {
     --header-height: 0rem;
   }
 
@@ -51,7 +54,7 @@
     align-items: center;
     justify-content: flex-start;
     padding: 0 0.5rem;
-    gap: 0.2rem;
+    gap: 0.15rem;
 
     overflow-x: auto;
     overflow-y: hidden;
@@ -65,8 +68,12 @@
     .symbol-set-button {
       margin: 0;
 
+      &.activated {
+        color: var(--emoji-color-primary);
+      }
+
       .icon {
-        font-size: 1.9rem;
+        font-size: var(--emoji-header-size);
         margin-bottom: 2px; // Fix iconfont alignment
         margin-left: 2px; // Fix iconfont alignment
       }
@@ -136,7 +143,7 @@
         .sticker-active-indicator {
           position: absolute;
           top: 50%;
-          left: 45%;
+          left: 46%;
           transform: translate(-50%, -50%);
           width: 90%;
           height: 95%;
@@ -145,7 +152,7 @@
           background-color: transparent;
 
           &.activated {
-            background-color: var(--color-primary);
+            background-color: var(--emoji-color-primary);
             opacity: 0.3;
           }
         }

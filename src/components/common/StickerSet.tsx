@@ -17,6 +17,7 @@ import {
   FAVORITE_SYMBOL_SET_ID,
   POPULAR_SYMBOL_SET_ID,
   RECENT_SYMBOL_SET_ID,
+  SEARCH_RESULT_SET_ID,
   STICKER_SIZE_PICKER,
 } from '../../config';
 import { getReactionKey } from '../../global/helpers';
@@ -151,6 +152,7 @@ const StickerSet: FC<OwnProps> = ({
   const isRecent = stickerSet.id === RECENT_SYMBOL_SET_ID;
   const isFavorite = stickerSet.id === FAVORITE_SYMBOL_SET_ID;
   const isPopular = stickerSet.id === POPULAR_SYMBOL_SET_ID;
+  const isSearchResult = stickerSet.id === SEARCH_RESULT_SET_ID;
   const isEmoji = stickerSet.isEmoji;
   const isPremiumSet = !isRecent && selectIsSetPremium(stickerSet);
 
@@ -239,10 +241,8 @@ const StickerSet: FC<OwnProps> = ({
 
   const isInstalled = stickerSet.installedDate && !stickerSet.isArchived;
 
-  const canCut = !isInstalled && stickerSet.id !== RECENT_SYMBOL_SET_ID
-    && stickerSet.id !== POPULAR_SYMBOL_SET_ID && stickerSet.id !== EFFECT_EMOJIS_SET_ID
+  const canCut = !isInstalled && !isSearchResult && !isRecent && !isPopular && stickerSet.id !== EFFECT_EMOJIS_SET_ID
     && stickerSet.id !== EFFECT_STICKERS_SET_ID && !isChatEmojiSet && !isChatStickerSet;
-
   const [isCut, , expand] = useFlag(canCut);
   const itemsBeforeCutout = itemsPerRow * 3 - 1;
   const totalItemsCount = (withDefaultTopicIcon || withDefaultStatusIcon) ? stickerSet.count + 1 : stickerSet.count;
