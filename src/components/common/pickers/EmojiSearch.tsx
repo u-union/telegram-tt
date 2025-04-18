@@ -33,7 +33,7 @@ const SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX = 'msg_emoji_';
 const SEARCH_OVERLAY_BUTTONS: SearchOverlayButton[] = [
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}heart`,
-    query: ['heart', 'love', 'kiss'],
+    query: ['love', 'heart', 'kiss'],
   },
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}like`,
@@ -45,19 +45,19 @@ const SEARCH_OVERLAY_BUTTONS: SearchOverlayButton[] = [
   },
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}party`,
-    query: ['tada', 'party', 'firework', 'confetti', 'danc'],
+    query: ['party', 'tada',  'firework', 'confetti', 'danc'],
   },
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}haha`,
-    query: ['smil', 'laugh', 'struck', 'grin'],
+    query: ['laugh', 'smil', 'struck', 'grin'],
   },
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}omg`,
-    query: ['hushed', 'astonished', 'frown'],
+    query: ['omg', 'hushed', 'astonished', 'frown'],
   },
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}sad`,
-    query: ['frown', 'unamused', 'disappointed', 'anguished'],
+    query: ['sad', 'frown', 'unamused', 'disappointed', 'anguished'],
   },
   {
     icon: `${SEARCH_OVERLAY_BUTTONS_ICONS_PREFIX}angry`,
@@ -84,7 +84,7 @@ const EmojiSearch: FC<OwnProps> = ({
   searchMode,
   setSearchMode,
   placeholderSuffix,
-  debounceTime = 300,
+  debounceTime = 250,
 }: OwnProps) => {
   const lang = useLang();
   const { isMobile } = useAppLayout();

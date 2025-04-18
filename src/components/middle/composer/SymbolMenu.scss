@@ -1,6 +1,10 @@
 @use "../../../styles/mixins";
 
 .SymbolMenu {
+  --picker-color-primary: var(--color-code-own);
+  --picker-color-background-secondary: rgba(0, 199, 62, 0.06);
+  --picker-side-margin: 0.3rem;
+
   &.attachment-modal-symbol-menu {
     position: absolute;
     z-index: var(--z-symbol-menu-modal);
@@ -74,9 +78,14 @@
       margin: 0 0.25rem;
       padding: 0;
 
+      .icon {
+        font-size: 1.7rem;
+      }
+
       &.activated {
         pointer-events: none;
-        color: var(--color-text);
+        color: var(--picker-color-primary);
+        background-color: var(--picker-color-background-secondary);
       }
 
       &.symbol-tab-button {

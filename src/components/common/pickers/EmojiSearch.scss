@@ -5,20 +5,20 @@
   display: flex;
   align-items: center;
 
-  width: 100%;
+  min-height: var(--height);
   height: var(--height);
 
   color: var(--color-text-secondary);
 
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
+  margin: 0.5rem 0;
 
-  background-color: var(--emoji-color-background);
+  background-color: var(--picker-color-background-secondary);
   border-radius: 0.75rem;
 
   &-icon-container {
     position: relative;
-    font-size: 1.6rem;
+    font-size: 1.7rem;
+    margin-bottom: 0.15rem;
     width: 2.25rem;
     height: 100%;
     color: var(--color-text-secondary);
@@ -55,7 +55,6 @@
     position: relative;
 
     margin-left: 0.15rem;
-    margin-right: 1rem;
     align-content: center;
 
     input {
@@ -143,7 +142,7 @@
 
       &-active {
         .icon {
-          color: var(--emoji-color-primary);
+          color: var(--picker-color-primary);
           font-size: var(--height) !important;
         }
       }

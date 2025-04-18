@@ -4,8 +4,6 @@
   height: 100%;
 
   --emoji-size: 2.25em;
-  --emoji-color-primary: var(--color-code-own); // fix
-  --emoji-color-background: rgba(0, 199, 62, 0.06);
   --emoji-header-size: 1.7rem;
   --header-height: 3rem;
 
@@ -15,12 +13,15 @@
 
   &-main {
     height: calc(100% - var(--header-height));
-    transition: height 250ms ease-in-out;
+    transition: height 150ms ease-in-out;
 
     overflow-y: auto;
-    padding: 0rem 0.75rem;
-    scrollbar-gutter: stable;
-
+    padding-left: var(--picker-side-margin);
+    padding-right: 0.1rem;
+    &.no-scrollbar {
+      padding-right: var(--picker-side-margin);
+    }
+  
     @include mixins.adapt-padding-to-scrollbar(0.75rem);
 
     .symbol-set {
@@ -53,12 +54,12 @@
 
   &-header {
     height: var(--header-height);
-    transition: height 250ms ease-in-out;
+    transition: height 150ms ease-in-out;
 
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 0 0.5rem;
+    padding: 0 var(--picker-side-margin);
     gap: 0.15rem;
 
     overflow-x: auto;
@@ -74,7 +75,8 @@
       margin: 0;
 
       &.activated {
-        color: var(--emoji-color-primary);
+        color: var(--picker-color-primary);
+        background-color: var(--picker-color-background-secondary);
       }
 
       .icon {
@@ -157,7 +159,7 @@
           background-color: transparent;
 
           &.activated {
-            background-color: var(--emoji-color-primary);
+            background-color: var(--picker-color-primary);
             opacity: 0.3;
           }
         }

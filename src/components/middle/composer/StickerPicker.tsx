@@ -402,13 +402,12 @@ const StickerPicker: FC<OwnProps & StateProps> = ({
         }
       >
         <EmojiSearch
-          className="EmojiPicker-search"
+          className="StickerPicker-search"
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           searchMode={searchMode}
           setSearchMode={setSearchMode}
           placeholderSuffix={'Stickers'}
-          debounceTime={250}
         />
 
         {searchMode && searchQuery?.length ? (

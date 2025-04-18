@@ -404,7 +404,6 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
           searchMode={searchMode}
           setSearchMode={setSearchMode}
           placeholderSuffix={'Emoji'}
-          debounceTime={250}
         />
 
         {!(searchMode && searchQuery?.length) ?

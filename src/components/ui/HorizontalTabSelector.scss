@@ -49,7 +49,7 @@
       overflow-y: hidden;
       white-space: nowrap;
 
-      background-color: var(--emoji-color-background);
+      background-color: var(--picker-color-background-secondary);
       border-radius: 2.3rem;
       padding: 0 0.3rem;
 
@@ -60,7 +60,7 @@
         height: var(--horizontal-tab-selector-width) !important;
 
         &.selected {
-          color: var(--emoji-color-primary);
+          color: var(--picker-color-primary);
 
           .icon {
             font-size: var(--emoji-header-size) !important;

@@ -1,22 +1,33 @@
 .GifPicker {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: 6.25rem;
-  grid-gap: 0.125rem;
-  grid-auto-flow: dense;
-  height: calc(100% - 0.1875rem);
-  overflow-y: auto;
-  margin: 0 0.1875rem;
-  padding-bottom: 0.1875rem;
-  border-radius: 1.125rem 1.125rem 0 0;
-  position: relative;
-  top: 0.1875rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 
-  .SymbolMenu.mobile-menu & {
-    border-radius: 0;
+  padding-left: var(--picker-side-margin);
+  padding-right: 0.1rem;
+
+  &-saved {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 6.25rem;
+    grid-gap: 0.125rem;
+    grid-auto-flow: dense;
+    padding-bottom: 0.1875rem;
+    position: relative;
+    top: 0.1875rem;
+    overflow-y: auto;
+  
+    .SymbolMenu.mobile-menu & {
+      border-radius: 0;
+    }
+  
+    .bubble {
+      border-radius: var(--border-radius-default) !important;
+    }
   }
 
-  .bubble {
-    border-radius: var(--border-radius-default) !important;
+  &-search {
+    margin-right: var(--picker-side-margin);
   }
 }
