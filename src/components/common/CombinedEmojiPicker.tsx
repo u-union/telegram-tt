@@ -395,7 +395,12 @@ const CombinedEmojiPicker: FC<OwnProps & StateProps> = ({
       <div
         ref={containerRef}
         onScroll={handleContentScroll}
-        className={buildClassName('EmojiPicker-main', IS_TOUCH_ENV ? 'no-scrollbar' : 'custom-scroll')}
+        className={
+          buildClassName(
+            'EmojiPicker-main',
+            IS_TOUCH_ENV ? 'no-scrollbar' : 'custom-scroll'
+          )
+        }
       >
         <EmojiSearch
           className="EmojiPicker-search"

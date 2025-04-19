@@ -9,6 +9,10 @@
 
   &.no-header {
     --header-height: 0rem;
+
+    .EmojiPicker-main {
+      padding-top: 0.5rem
+    }
   }
 
   &-main {
@@ -82,7 +86,6 @@
       .icon {
         font-size: var(--emoji-header-size);
         margin-bottom: 2px; // Fix iconfont alignment
-        margin-left: 2px; // Fix iconfont alignment
       }
     }
 

@@ -22,6 +22,7 @@ type OwnProps = {
   searchMode: boolean;
   setSearchQuery: (query: string[]) => void;
   setSearchMode: (focused: boolean) => void;
+  hideOverlayButtons?: boolean;
 };
 
 type SearchOverlayButton = {
@@ -85,6 +86,7 @@ const EmojiSearch: FC<OwnProps> = ({
   setSearchMode,
   placeholderSuffix,
   debounceTime = 250,
+  hideOverlayButtons
 }: OwnProps) => {
   const lang = useLang();
   const { isMobile } = useAppLayout();
@@ -209,6 +211,19 @@ const EmojiSearch: FC<OwnProps> = ({
         <div
           ref={overlayRef}
           className={buildClassName('EmojiSearch-overlay', 'no-scrollbar')}
+          // Workaround for scrolling overlay on mobile (not much time have to redo this)
+          onTouchMove={
+            (e: React.TouchEvent<HTMLDivElement>) => {
+              // Scroll overlay here
+                const touch = e.touches[0];
+                if (overlayRef.current) {
+                overlayRef.current.scrollLeft -= touch.clientX - (
+                  overlayRef.current.dataset.lastTouchX ? parseFloat(overlayRef.current.dataset.lastTouchX) : 0
+                );
+                overlayRef.current.dataset.lastTouchX = touch.clientX.toString();
+                }
+            }
+          }
         >
           <div className={buildClassName(
             "EmojiSearch-overlay-placeholder",
@@ -220,7 +235,7 @@ const EmojiSearch: FC<OwnProps> = ({
             "EmojiSearch-overlay-buttons",
             !!inputValue.length && 'EmojiSearch-overlay-buttons-hidden'
           )}>
-            {SEARCH_OVERLAY_BUTTONS.map((button, index) => (
+            {!hideOverlayButtons && SEARCH_OVERLAY_BUTTONS.map((button, index) => (
               <Button
                 className={buildClassName(
                   "EmojiSearch-overlay-button",

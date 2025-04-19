@@ -3,11 +3,19 @@
 .SymbolMenu {
   --picker-color-primary: var(--color-code-own);
   --picker-color-background-secondary: rgba(0, 199, 62, 0.06);
-  --picker-side-margin: 0.3rem;
+  --picker-color-background-secondary: var(--color-code-bg);
+  --picker-side-margin: 0.4rem;
 
   &.attachment-modal-symbol-menu {
     position: absolute;
     z-index: var(--z-symbol-menu-modal);
+
+    // Hide the footer in attachment modal
+    // As only emojis are allowed in this case
+    --symbol-menu-footer-height: 0rem;
+    .SymbolMenu-footer {
+      display: none;
+    }
   }
 
   &.mobile-menu {
@@ -42,6 +50,12 @@
     &.open.in-attachment-modal {
       z-index: calc(var(--z-modal) + 1);
       transform: translate3d(0, calc(var(--symbol-menu-height)), 0);
+
+      // Hide the footer in attachment modal (mobile)
+      --symbol-menu-footer-height: 0rem;
+      .SymbolMenu-footer {
+        display: none;
+      }
     }
 
     body.no-page-transitions & {
@@ -187,6 +201,40 @@
   @media (orientation: landscape) {
     .symbol-close-button {
       display: block;
+    }
+  }
+
+  &-search-overlay {
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+    background-color: var(--color-background);
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 1;
+
+    transition: 
+      opacity 0.2s ease-in-out,
+      top 0.2s ease-in-out;
+
+    &-disabled {
+      top: 50%;
+      opacity: 0;
+      transition: 
+      opacity 0.2s ease-in-out,
+      top 0.2s ease-in-out;
+      pointer-events: none;
+    }
+
+    .EmojiSearch {
+      margin-left: 0.5rem;
+      margin-right: 0.5rem;
+    }
+
+    .StickerSearch {
+      padding: 0;
     }
   }
 }

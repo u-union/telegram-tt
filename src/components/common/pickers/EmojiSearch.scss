@@ -1,16 +1,16 @@
 .EmojiSearch {
-  --height: 2.5rem;
+  --emoji-search-height: 2.5rem;
   --icon-size: 1.25rem;
 
   display: flex;
   align-items: center;
 
-  min-height: var(--height);
-  height: var(--height);
+  min-height: var(--emoji-search-height);
+  height: var(--emoji-search-height);
 
   color: var(--color-text-secondary);
 
-  margin: 0.5rem 0;
+  margin-bottom: 0.75rem;
 
   background-color: var(--picker-color-background-secondary);
   border-radius: 0.75rem;
@@ -131,19 +131,19 @@
       .icon {
         height: var(--button-size);
         line-height: calc(var(--button-size) - 0.6rem);
-        font-size: calc(var(--height) * 0.9) !important;
+        font-size: calc(var(--emoji-search-height) * 0.8) !important;
 
         transition: font-size 0.2s ease-in-out;
 
         &:hover {
-          font-size: var(--height) !important;
+          font-size: var(--emoji-search-height) !important;
         }
       }
 
       &-active {
         .icon {
           color: var(--picker-color-primary);
-          font-size: var(--height) !important;
+          font-size: var(--emoji-search-height) !important;
         }
       }
     }

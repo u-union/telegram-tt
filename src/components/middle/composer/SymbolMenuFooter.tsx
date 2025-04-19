@@ -13,8 +13,7 @@ type OwnProps = {
   activeTab: SymbolMenuTabs;
   onSwitchTab: (tab: SymbolMenuTabs) => void;
   onRemoveSymbol: () => void;
-  onSearchOpen: (type: 'stickers' | 'gifs') => void;
-  isAttachmentModal?: boolean;
+  onSearchOpen: (type: 'stickers' | 'emojis') => void;
   canSendPlainText?: boolean;
   canSearch?: boolean;
 };
@@ -38,7 +37,7 @@ const SYMBOL_MENU_TAB_ICONS = {
 };
 
 const SymbolMenuFooter: FC<OwnProps> = ({
-  activeTab, onSwitchTab, onRemoveSymbol, onSearchOpen, isAttachmentModal,
+  activeTab, onSwitchTab, onRemoveSymbol, onSearchOpen,
   canSendPlainText, canSearch,
 }) => {
   const lang = useOldLang();
@@ -60,7 +59,7 @@ const SymbolMenuFooter: FC<OwnProps> = ({
   }
 
   const handleSearchOpen = useLastCallback(() => {
-    onSearchOpen(activeTab === SymbolMenuTabs.Stickers ? 'stickers' : 'gifs');
+    onSearchOpen(activeTab === SymbolMenuTabs.Stickers ? 'stickers' : 'emojis');
   });
 
   function stopPropagation(event: any) {
@@ -68,28 +67,31 @@ const SymbolMenuFooter: FC<OwnProps> = ({
   }
 
   return (
-    <div className="SymbolMenu-footer" onClick={stopPropagation} dir={lang.isRtl ? 'rtl' : undefined}>
-      {activeTab !== SymbolMenuTabs.Emoji && canSearch && (
+    <div className="SymbolMenu-footer"
+      onClick={stopPropagation}
+      dir={lang.isRtl ? 'rtl' : undefined}
+    >
+      {activeTab === SymbolMenuTabs.Stickers && canSearch && (
         <Button
           className="symbol-search-button"
-          ariaLabel={activeTab === SymbolMenuTabs.Stickers ? 'Search Stickers' : 'Search GIFs'}
+          ariaLabel='Search Stickers'
           round
           faded
           color="translucent"
           onClick={handleSearchOpen}
         >
-          <Icon name="search" />
+          <Icon name="add" />
         </Button>
       )}
 
       {canSendPlainText && renderTabButton(SymbolMenuTabs.Emoji)}
-      {!isAttachmentModal && renderTabButton(SymbolMenuTabs.Stickers)}
-      {!isAttachmentModal && renderTabButton(SymbolMenuTabs.GIFs)}
+      {renderTabButton(SymbolMenuTabs.Stickers)}
+      {renderTabButton(SymbolMenuTabs.GIFs)}
 
       {activeTab === SymbolMenuTabs.Emoji && (
         <Button
           className="symbol-delete-button"
-          onClick={onRemoveSymbol}
+          onClick={() => onRemoveSymbol()}
           ariaLabel="Remove Symbol"
           round
           faded

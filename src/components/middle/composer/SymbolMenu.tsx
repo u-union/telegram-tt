@@ -28,6 +28,7 @@ import Transition from '../../ui/Transition';
 import CombinedEmojiPicker from '../../common/CombinedEmojiPicker';
 import GifPicker from './GifPicker';
 import StickerPicker from './StickerPicker';
+import SymbolMenuSearchOverlay from './SymbolMenuSearchOverlay';
 import SymbolMenuFooter, { SYMBOL_MENU_TAB_TITLES, SymbolMenuTabs } from './SymbolMenuFooter';
 
 import './SymbolMenu.scss';
@@ -56,7 +57,6 @@ export type OwnProps = {
   ) => void;
   onGifSelect?: (gif: ApiVideo, isSilent?: boolean, shouldSchedule?: boolean) => void;
   onRemoveSymbol: () => void;
-  onSearchOpen: (type: 'stickers' | 'gifs') => void;
   addRecentEmoji: GlobalActions['addRecentEmoji'];
   addRecentCustomEmoji: GlobalActions['addRecentCustomEmoji'];
   className?: string;
@@ -92,7 +92,6 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
   onStickerSelect,
   onGifSelect,
   onRemoveSymbol,
-  onSearchOpen,
   addRecentEmoji,
   addRecentCustomEmoji,
   ...menuPositionOptions
@@ -104,6 +103,8 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
 
   const [handleMouseEnter, handleMouseLeave] = useMouseInside(isOpen, onClose, undefined, isMobile);
   const { shouldRender, transitionClassNames } = useShowTransitionDeprecated(isOpen, onClose, false, false);
+
+  const [stickersSearchMode, setStickersSearchMode] = useState<'stickers' | 'emojis' | undefined>(undefined);
 
   const lang = useOldLang();
 
@@ -182,9 +183,8 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
     onCustomEmojiSelect(emoji);
   });
 
-  const handleSearch = useLastCallback((type: 'stickers' | 'gifs') => {
-    onClose();
-    onSearchOpen(type);
+  const handleSearch = useLastCallback((type: 'stickers' | 'emojis') => {
+    setStickersSearchMode(type);
   });
 
   const handleStickerSelect = useLastCallback((
@@ -211,8 +211,8 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
         return (
           <StickerPicker
             className="picker-tab"
-            isHidden={!isOpen || !isActive}
-            loadAndPlay={canSendStickers ? isOpen && (isActive || isFrom) : false}
+            isHidden={!isOpen || !isActive || !!stickersSearchMode}
+            loadAndPlay={canSendStickers ? isOpen && (isActive || isFrom) && !stickersSearchMode : false}
             idPrefix={idPrefix}
             canSendStickers={canSendStickers}
             noContextMenus={!isMessageComposer}
@@ -272,8 +272,13 @@ const SymbolMenu: FC<OwnProps & StateProps> = ({
         onRemoveSymbol={onRemoveSymbol}
         canSearch={isMessageComposer}
         onSearchOpen={handleSearch}
-        isAttachmentModal={isAttachmentModal}
         canSendPlainText={canSendPlainText}
+      />
+
+      {/* Sticker search overlay */}
+      <SymbolMenuSearchOverlay
+        stickersSearchMode={stickersSearchMode}
+        onClose={() => setStickersSearchMode(undefined)}
       />
     </>
   );
