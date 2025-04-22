@@ -10,6 +10,8 @@ import useInputCustomEmojis from "./hooks/useInputCustomEmojis";
 import { requestMeasure, requestMutation } from "../../../lib/fasterdom/fasterdom";
 
 import { isSelectionInsideInput } from './helpers/selection';
+import parseMarkdown, { getDelimByTag } from "./helpers/parseMarkdown";
+import { EDITABLE_INPUT_ID } from "../../../config";
 
 import { getActions, withGlobal } from '../../../global';
 import { selectCanPlayAnimatedEmojis, selectDraft, selectIsInSelectMode } from '../../../global/selectors';
@@ -337,7 +339,14 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       removeAllSelections();
       focusOnInputBox();
     } else {
-      onInputHtmlChange(innerHTML);
+      // Dynamically parse the markdown (LiveMarkdown)
+      const oldCaret = getCaretPosition(inputRef.current!);
+      const { html, caret } = parseMarkdown(innerHTML || '', oldCaret);
+      inputRef.current!.innerHTML = html;
+      setCaretPosition(inputRef.current!, caret);
+      // End
+
+      onInputHtmlChange(html);
     }
   });
 
@@ -357,10 +366,48 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     }, 300); // same as animation (no sense to change)
   }
 
+  // Highligh Formatted text (LiveMarkdown)
+  const handleHighlightMarkdown = useLastCallback(() => {
+    // Highlight the formatted parent if inside one, only if not multi-selection (no selected text)
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const container = range && range.startContainer;
+    const parentTag = container?.parentElement?.tagName;
+    console.warn('container', container, 'parentTag', parentTag, 'isincludeprep, isparenttag', ['PRE', 'P'].includes(parentTag || ''));
+    const formattedParent = ['PRE', 'P'].includes(parentTag || '') ?
+      container?.parentElement?.parentElement :
+      container?.parentElement;
+
+    // Remove 'selected' class from all formatted elements except the current one
+    if (inputRef.current) {
+      const formattedElements = inputRef.current.querySelectorAll('.selected');
+      formattedElements.forEach((el) => {
+        if (el !== formattedParent) {
+          requestMutation(() => {
+            el.classList.remove('selected');
+          });
+        }
+      });
+    }
+
+    if (formattedParent) {      
+      console.warn('range', range, 'iscollapsed', range?.collapsed, 'formattedParent', formattedParent);
+      // Only highlight if selection is collapsed (no selected text)
+      if (formattedParent.id !== EDITABLE_INPUT_ID && range && range.collapsed) {
+      // if (formattedParent && formattedParent.id === 'markdown' && range && range.collapsed) {
+          requestMutation(() => {
+          formattedParent.classList.add('selected');
+          formattedParent.setAttribute('data-markdown', getDelimByTag(formattedParent.tagName));
+        });
+      }
+    }
+  });
+
   const handleInputBoxKeyUp = useLastCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const { key } = e;
 
     if (key === 'ArrowRight' || key === 'ArrowLeft') {
+      handleHighlightMarkdown(); // (LiveMarkdown)
 
       if (shouldResetFormat.current === key) {
         // If pressed second time, reset the format
@@ -535,6 +582,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       });
     });
   });
+
   // Text Formatter Handler with Debounce
   const debouncedHandleTextFormatterDisplay = debounce(handleTextFormatterDisplay, SELECTION_RECALCULATE_DELAY_MS, false);
 
@@ -560,6 +608,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
             role="textbox"
             dir='auto'
             contentEditable={isAttachmentModalInput || canSendPlainText}
+            onClick={handleHighlightMarkdown} // (LiveMarkdown)
             onChange={handleInputBoxChange}
             onKeyDown={handleInputBoxKeyDown}
             onKeyUp={handleInputBoxKeyUp}

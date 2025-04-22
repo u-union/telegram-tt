@@ -69,7 +69,7 @@ function escapeRegExp(string: string): string {
 export default function parseHtmlAsFormattedTextNew(
   html: string,
   withMarkdownLinks = false,
-  skipMarkdown = false
+  skipMarkdown = true
 ): ApiFormattedText {  
   console.warn('--------------------------------------------');
   console.warn('html:', html);
@@ -102,13 +102,18 @@ function preprocessText(html: string, withMarkdownLinks: boolean): string {
 
   // Are emojii supported / custom emojii - regex
 
-  // Replace '```' with '<pre>'
-  const preRegex = new RegExp('(?:^|\\n)```(.*?)(?:\\n)([\\s\\S]*?)(?:\\n)```(?=\\n|$)', 'gms');
-  processedText = processedText.replace(preRegex, '<pre data-language="$1">$2</pre>');
+  // Markdown parsed insrtantly in messageinput
+  // // Replace '```' with '<pre>'
+  // const preRegex = new RegExp('(?:^|\\n)```(.*?)(?:\\n)([\\s\\S]*?)(?:\\n)```(?=\\n|$)', 'gms');
+  // processedText = processedText.replace(preRegex, '<pre data-language="$1">$2</pre>');
 
-  // Replace '\n *spacing allowed* > *everything* \n' with '<blockquote>'
-  const blockquoteRegex = new RegExp('(?:^|\\n)(&gt;|>) ([\\s\\S]*?)(?=\\n|$)', 'g');
-  processedText = processedText.replace(blockquoteRegex, '<blockquote data-can-collapse="false">$1</blockquote>\n');
+  // // Replace '\n *spacing allowed* > *everything* \n' with '<blockquote>'
+  // const blockquoteRegex = new RegExp('(?:^|\\n)(&gt;|>) ([\\s\\S]*?)(?=\\n|$)', 'g');
+  // processedText = processedText.replace(blockquoteRegex, '<blockquote data-can-collapse="false">$2</blockquote>\n');
+
+  // Delete <p class="code-title">...</p> tags (LiveMarkdown)
+  const codeTitleRegex = new RegExp('<p class="code-title">.*?</p>', 'g');
+  processedText = processedText.replace(codeTitleRegex, '');
 
   if (withMarkdownLinks) {
     // Handle markdown links

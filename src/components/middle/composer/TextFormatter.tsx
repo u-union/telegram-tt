@@ -36,7 +36,7 @@ export type OwnProps = {
 
 interface ISelectedTextFormats {
   image?: boolean;
-  link?: boolean
+  link?: boolean;
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -64,7 +64,7 @@ const TEXT_FORMATS: TextFormatMapping[] = [
   { tag: ['BLOCKQUOTE'], format: 'quote', attributes: { 'data-can-collapse': "false" } },
 ];
 
-const getFormatByTag = (tagName: string): keyof ISelectedTextFormats | undefined =>
+export const getFormatByTag = (tagName: string): keyof ISelectedTextFormats | undefined =>
   TEXT_FORMATS.find(f => f.tag.includes(tagName))?.format;
 
 const getTagByFormat = (format: keyof ISelectedTextFormats): string =>
@@ -93,8 +93,6 @@ type SlpChar = {
   }
 }
 
-const fragmentEl = document.createElement('div');
-
 const TextFormatter: FC<OwnProps> = ({
   getHtml,
   setHtml,
@@ -114,7 +112,6 @@ const TextFormatter: FC<OwnProps> = ({
   const [linkUrl, setLinkUrl] = useState('');
   const [inputClassName, setInputClassName] = useState<string | undefined>();
   const [selectedTextFormats, setSelectedTextFormats] = useState<ISelectedTextFormats>({});
-
 
   /**
    * Update selected text formats

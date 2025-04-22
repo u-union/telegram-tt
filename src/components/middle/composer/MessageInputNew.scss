@@ -120,6 +120,47 @@
       &.shake-effect-v {
         animation: verticalShake 0.3s ease-out;
       }
+
+      // Formatted text highlight (LiveMarkdown)
+      .selected {
+        background: var(--color-background-secondary);
+        border-radius: 0.5rem;
+        &:not(.CodeBlock) {
+          padding: 0.125rem 0.15rem;
+        }
+
+        // Usuall
+        &[data-markdown]::before, &[data-markdown]::after {
+          content: attr(data-markdown);
+          font-size: 0.875rem;
+          color: var(--color-text);
+        }
+
+        &.CodeBlock {
+          &::before, &::after {
+            content: "";
+          }
+
+          .code-title {
+            display: none;
+          }
+
+          .code-block {
+            &[data-language]::before {
+              content: "```" attr(data-language) "\A";
+              font-size: 0.875rem;
+              color: var(--color-text);
+            }
+  
+            &[data-language]::after {
+              content: "\A```";
+              font-size: 0.875rem;
+              color: var(--color-text);
+            }
+          }
+        }
+      }
+      // End (LiveMarkdown)
     }
 
     .forced-placeholder,
