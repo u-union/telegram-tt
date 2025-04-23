@@ -21,7 +21,6 @@ const PATTERNS: Array<{ delim: string; tag: string, attr?: string[][] }> = [
 ];
 
 export const getDelimByTag = (tag: string): string => {
-  console.warn('tag', tag);
   const delim = PATTERNS.find((pattern) => pattern.tag === tag.toLowerCase());
   if (delim) {
     return delim.delim;
