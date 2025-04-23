@@ -125,7 +125,7 @@
       .selected {
         background: var(--color-background-secondary);
         border-radius: 0.5rem;
-        &:not(.CodeBlock) {
+        &:not(.CodeBlock, .blockquote) {
           padding: 0.125rem 0.15rem;
         }
 
@@ -136,7 +136,7 @@
           color: var(--color-text);
         }
 
-        &.CodeBlock {
+        &.CodeBlock, &.blockquote {
           &::before, &::after {
             content: "";
           }

@@ -441,7 +441,7 @@ const Composer: FC<OwnProps & StateProps> = ({
   // eslint-disable-next-line no-null/no-null
   const storyReactionRef = useRef<HTMLButtonElement>(null);
 
-  const { getHtml, setHtml, undoHtml, redoHtml, resetHtml } = useHtmlInput();
+  const { getHtml, setHtml, undoHtml, redoHtml, resetHtml } = useHtmlInput(inputRef, chatId);
   const [isMounted, setIsMounted] = useState(false);
   const getSelectionRange = useGetSelectionRange(editableInputCssSelector);
   const lastMessageSendTimeSeconds = useRef<number>();

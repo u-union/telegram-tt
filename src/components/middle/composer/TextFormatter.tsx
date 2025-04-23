@@ -11,6 +11,7 @@ import captureEscKeyListener from '../../../util/captureEscKeyListener';
 import { ensureProtocol } from '../../../util/ensureProtocol';
 import getKeyFromEvent from '../../../util/getKeyFromEvent';
 import stopEvent from '../../../util/stopEvent';
+import { getAbsoluteRangeOffsets } from '../../../util/selection';
 
 import useFlag from '../../../hooks/useFlag';
 import useLastCallback from '../../../hooks/useLastCallback';
@@ -61,7 +62,7 @@ const TEXT_FORMATS: TextFormatMapping[] = [
   { tag: ['CODE'], format: 'monospace', attributes: { class: "text-entity-code", dir: 'auto' } },
   { tag: ['SPAN'], format: 'spoiler', attributes: { class: "spoiler", 'data-entity-type': `${ApiMessageEntityTypes.Spoiler}` } },
   { tag: ['A'], format: 'link', attributes: { class: 'text-entity-link', dir: 'auto' } },
-  { tag: ['BLOCKQUOTE'], format: 'quote', attributes: { 'data-can-collapse': "false" } },
+  { tag: ['BLOCKQUOTE'], format: 'quote', attributes: { class: 'blockquote', 'data-can-collapse': "false" } },
 ];
 
 export const getFormatByTag = (tagName: string): keyof ISelectedTextFormats | undefined =>
@@ -193,8 +194,7 @@ const TextFormatter: FC<OwnProps> = ({
     if (!selectedRange) return;
 
     // Find absolute start and end offsets
-    const startOffset = getAbsoluteRangeOffset(selectedRange, 'start');
-    const endOffset = getAbsoluteRangeOffset(selectedRange, 'end');
+    const { start: startOffset, end: endOffset} = getAbsoluteRangeOffsets(selectedRange, editableInputId);
 
     // Parse HTML into SLP format
     const html = getHtml();
@@ -238,62 +238,6 @@ const TextFormatter: FC<OwnProps> = ({
       setSelectedRange(newRange);
       setHtml(inputDiv.innerHTML);
     });
-  });
-
-  /**
-   * Get absolute offset of range from text input
-   * @param range - selected range
-   * @param type - start or end offset
-   * @returns - absolute offset
-   */
-  const getAbsoluteRangeOffset = useLastCallback((range: Range, type: 'start' | 'end'): number => {
-    let absoluteOffset = type === 'start' ? range.startOffset : range.endOffset;
-    const element = (type === 'start' ? range.startContainer : range.endContainer);
-
-    let regression_depth = 0;
-    const getOffsetFromParent = (node: HTMLElement | null) => {
-      // Prevent infinite recursion
-      regression_depth++;
-      if (regression_depth > MAX_REGRESSION_DEPTH) {
-        console.warn('Max regression depth reached');
-        return;
-      }
-
-      if (!node || (node as HTMLElement).id === editableInputId) {
-        return;
-      }
-
-      // Find offset of node from parent
-      const parent = node.parentElement;
-      if (!parent) return;
-      const children = Array.from(parent.childNodes);
-      const index = children.indexOf(node as ChildNode);
-      if (index === -1) return;
-
-      // Calculate offset including all nested children
-      let parentOffset = 0;
-      for (let i = 0; i < index; i++) {
-        const child = children[i] as HTMLElement;
-        if (child.nodeType === Node.TEXT_NODE) {
-          parentOffset += child.textContent?.length || 0;
-        } else if (child.nodeType === Node.ELEMENT_NODE) {
-          if (child.tagName === 'IMG') {
-            parentOffset += 1;
-          } else {
-            parentOffset += (child as HTMLElement).innerText.length;
-          }
-        }
-      }
-
-      absoluteOffset += parentOffset;
-
-      getOffsetFromParent(parent);
-    }
-
-    // Find absolute offset from parent
-    getOffsetFromParent(element as HTMLElement);
-
-    return type === 'start' ? absoluteOffset : absoluteOffset - 1;
   });
 
   /**

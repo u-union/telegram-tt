@@ -106,3 +106,58 @@ export function removeAllSelections() {
   selection?.removeAllRanges();
   selection?.empty(); // Old browsers support
 }
+
+  /**
+   * Get absolute start and end offsets of a Range within a contenteditable element
+   * @param range - selected Range
+   * @param editableInputId - ID of the editable element
+   * @returns an object with { start, end }
+   */
+  export function getAbsoluteRangeOffsets(range: Range, editableInputId: string): { start: number; end: number } {
+    let startOffset = range.startOffset;
+    let endOffset = range.endOffset;
+    let regressionDepth = 0;
+
+    function accumulateOffset(node: Node | null): number {
+      if (!node || (node as HTMLElement).id === editableInputId || regressionDepth > 50) {
+        return 0;
+      }
+      regressionDepth++;
+
+      const parent = node.parentNode as HTMLElement;
+      if (!parent) {
+        return 0;
+      }
+
+      const siblings = Array.from(parent.childNodes);
+      const index = siblings.indexOf(node as ChildNode);
+      if (index < 0) {
+        return 0;
+      }
+
+      let offset = 0;
+      for (let i = 0; i < index; i++) {
+        const sibling = siblings[i];
+        if (sibling.nodeType === Node.TEXT_NODE) {
+          offset += sibling.textContent?.length || 0;
+        } else if (sibling.nodeType === Node.ELEMENT_NODE) {
+          if ((sibling as HTMLElement).tagName === 'IMG') {
+            offset += 1;
+          } else {
+            offset += (sibling as HTMLElement).innerText.length;
+          }
+        }
+      }
+      return offset + accumulateOffset(parent);
+    }
+
+    regressionDepth = 0;
+    startOffset += accumulateOffset(range.startContainer);
+    regressionDepth = 0;
+    endOffset += accumulateOffset(range.endContainer);
+
+    // Match original logic by subtracting 1 from end offset
+    endOffset -= 1;
+
+    return { start: startOffset, end: endOffset };
+  }

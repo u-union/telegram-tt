@@ -1,7 +1,7 @@
-import { useEffect, useRef, useSignal } from "../../../lib/teact/teact";
+import { RefObject, useCallback, useEffect, useRef, useSignal } from "../../../lib/teact/teact";
 import { debounce } from "../../../util/schedulers";
 
-const HTML_INPUT_HISTORY_DEBOUNCE_MS = 300;
+const HTML_INPUT_HISTORY_DEBOUNCE_MS = 400;
 const HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH = 4096 * 100; // ~400KB
 
 function pruneHistory(history: string[], maxTotalLength: number): string[] {
@@ -14,7 +14,7 @@ function pruneHistory(history: string[], maxTotalLength: number): string[] {
   return history.slice(-1);
 }
 
-export default function useHtmlInput(initialValue: string = '') {  
+export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>, chatId: string, initialValue: string = '') {
   const mounted = useRef(false);
   useEffect(() => {
       mounted.current = true;
@@ -29,18 +29,23 @@ export default function useHtmlInput(initialValue: string = '') {
   const inputSnapshotListRef = useRef<string[]>([]);
   const currentSnapshotIndexRef = useRef<number>(null);
 
-  const debouncedPush = debounce((html: string) => {
-    if (
-      !mounted.current ||
-      inputSnapshotListRef.current.length &&
-      inputSnapshotListRef.current[inputSnapshotListRef.current.length - 1] === html
-    ) return;
+  // Save input snapshot with debounce to saving on every keystroke
+  const debouncedPush = useCallback(
+    debounce((html: string) => {
+      if (
+        !mounted.current ||
+        inputSnapshotListRef.current.length &&
+        inputSnapshotListRef.current[inputSnapshotListRef.current.length - 1] === html
+      ) return;
+  
+      inputSnapshotListRef.current.push(html);
+      inputSnapshotListRef.current = pruneHistory(inputSnapshotListRef.current, HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH);
+      currentSnapshotIndexRef.current = inputSnapshotListRef.current.length - 1;
+    }, HTML_INPUT_HISTORY_DEBOUNCE_MS, false),
+    [chatId, mounted]
+  )
 
-    inputSnapshotListRef.current.push(html);
-    inputSnapshotListRef.current = pruneHistory(inputSnapshotListRef.current, HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH);
-    currentSnapshotIndexRef.current = inputSnapshotListRef.current.length - 1;
-  }, HTML_INPUT_HISTORY_DEBOUNCE_MS, false);
-
+  // Function to handle incoming HTML input
   const setHtml = (html: string) => {
     const index = currentSnapshotIndexRef.current;
     if (index !== null && index !== inputSnapshotListRef.current.length - 1) {
@@ -79,6 +84,39 @@ export default function useHtmlInput(initialValue: string = '') {
     inputSnapshotListRef.current = [initialValue];
     currentSnapshotIndexRef.current = 0;
   }
+
+  /**
+   * Feature(kind of): force to save a snapshot of input on delimiters
+   * Should provide a better experience for the user
+   */
+  const isDelimiterKeyPressed: RefObject<boolean> = useRef(false);
+  const delimiterKeys = ['Enter', 'Tab', ' ', ',', ';', '.', '!', '?', ':', '\n'];
+  // Listen if any of separating symbols are pressed
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (delimiterKeys.includes(event.key)) {
+        if (!isDelimiterKeyPressed.current) {
+          isDelimiterKeyPressed.current = true;
+          // Flush debounced push to save the current input
+          debouncedPush.flush();
+        }
+      } else {
+        // Reset the flag if any other key is pressed
+        isDelimiterKeyPressed.current = false;
+      }
+    };
+
+    const inputElement = inputRef?.current;
+    if (inputElement) {
+      inputElement.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      if (inputElement) {
+        inputElement.removeEventListener('keydown', handleKeyDown);
+      }
+    };
+  }, [chatId, debouncedPush]);
 
   return { getHtml, setHtml, undoHtml, redoHtml, resetHtml };
 }

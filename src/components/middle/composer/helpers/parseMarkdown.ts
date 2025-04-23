@@ -16,7 +16,8 @@ const PATTERNS: Array<{ delim: string; tag: string, attr?: string[][] }> = [
   { delim: "~~", tag: "strike" },
   // { delim: "`", tag: "code", attr: [['class', 'text-entity-code']] }, // pre issue (```)
   { delim: "||", tag: "span", attr: [['class', 'spoiler'], ['data-entity-type', 'MessageEntitySpoiler']] },
-  { delim: "```", tag: "pre" }
+  { delim: "```", tag: "pre" },
+  { delim: ">", tag: "blockquote", attr: [['class', 'blockquote']] },
 ];
 
 export const getDelimByTag = (tag: string): string => {
@@ -25,7 +26,7 @@ export const getDelimByTag = (tag: string): string => {
   if (delim) {
     return delim.delim;
   }
-  return '??';
+  return '`';
 };
 
 /**
@@ -124,12 +125,31 @@ function processNodeText(
   return { htmlFrag: nodeHtml, newOffset: localCaret };
 }
 
+export const cleanHtmlInput = (html: string): string => {
+  // Clean up the HTML from non-breaking spaces and zero-width spaces
+  let processedText = html.replace(/&nbsp;/g, ' ').replace(/\u200b+/g, '');
+
+  // Replace <br> tags with newlines (hanle <br*> and Safari <div><br></div>)
+  const newlineRegex = new RegExp('<div><br></div>|<br[^>\\n]*>', 'g');
+  processedText = processedText.replace(newlineRegex, '\n');
+
+  // Replace Safari <div>*</div> with newlines
+  const divRegex = new RegExp('<div>(.*?)</div>', 'g');
+  processedText = processedText.replace(divRegex, '\n$1');
+
+  return processedText;
+}
+
+
 /**
  * Main entry: take your DIV.innerHTML + old caret (flattened),
  * parse only the text‐node at that position, preserve other tags,
  * return new innerHTML + new flattened caret.
  */
 export default function parseMarkdown(html: string, caret: number): ParseResult {
+  // Clean up the HTML input
+  html = cleanHtmlInput(html);
+
   // 0) handle triple‐backtick code blocks globally
   const codeBlockRe = /```(\w*)\n([\s\S]*?)\n```/;
   const cbMatch = codeBlockRe.exec(html);
@@ -142,12 +162,12 @@ export default function parseMarkdown(html: string, caret: number): ParseResult 
     const title = langPretty ? `<p class="code-title">${langPretty}</p>` : '';
     const replacement =
       `<div class="CodeBlock">` +
-        title +
-        `<pre class="code-block" ` +
-          `data-entity-type="${ApiMessageEntityTypes.Pre}" ` +
-          `data-language="${langPretty}">` +
-          code +
-        `</pre>` +
+      title +
+      `<pre class="code-block" ` +
+      `data-entity-type="${ApiMessageEntityTypes.Pre}" ` +
+      `data-language="${langPretty}">` +
+      code +
+      `</pre>` +
       `</div>`;
 
     // adjust caret if it was after the fenced block

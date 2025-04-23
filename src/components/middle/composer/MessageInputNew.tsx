@@ -10,7 +10,7 @@ import useInputCustomEmojis from "./hooks/useInputCustomEmojis";
 import { requestMeasure, requestMutation } from "../../../lib/fasterdom/fasterdom";
 
 import { isSelectionInsideInput } from './helpers/selection';
-import parseMarkdown, { getDelimByTag } from "./helpers/parseMarkdown";
+import parseMarkdown, { cleanHtmlInput, getDelimByTag } from "./helpers/parseMarkdown";
 import { EDITABLE_INPUT_ID } from "../../../config";
 
 import { getActions, withGlobal } from '../../../global';
@@ -247,7 +247,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    * Initialize the input box with current HTML signal value
    */
   useLayoutEffect(() => {
-    const html = isActive ? getHtmlInputText() : '';
+    const html = isActive ? cleanHtmlInput(getHtmlInputText()) : '';
 
     if (html !== inputRef.current!.innerHTML) {
       requestMutation(() => {
@@ -373,7 +373,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     const container = range && range.startContainer;
     const parentTag = container?.parentElement?.tagName;
-    console.warn('container', container, 'parentTag', parentTag, 'isincludeprep, isparenttag', ['PRE', 'P'].includes(parentTag || ''));
+
     const formattedParent = ['PRE', 'P'].includes(parentTag || '') ?
       container?.parentElement?.parentElement :
       container?.parentElement;
@@ -391,7 +391,6 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     }
 
     if (formattedParent) {      
-      console.warn('range', range, 'iscollapsed', range?.collapsed, 'formattedParent', formattedParent);
       // Only highlight if selection is collapsed (no selected text)
       if (formattedParent.id !== EDITABLE_INPUT_ID && range && range.collapsed) {
       // if (formattedParent && formattedParent.id === 'markdown' && range && range.collapsed) {

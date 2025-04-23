@@ -6,25 +6,42 @@ export function debounce<F extends AnyToVoidFunction>(
   shouldRunFirst = true,
   shouldRunLast = true,
 ) {
-  let waitingTimeout: number | undefined;
+  let timeout: number | undefined;
+  let lastArgs: Parameters<F>;
 
-  return (...args: Parameters<F>) => {
-    if (waitingTimeout) {
-      clearTimeout(waitingTimeout);
-      waitingTimeout = undefined;
+  const debounced = (...args: Parameters<F>) => {
+    lastArgs = args;
+
+    if (timeout != null) {
+      clearTimeout(timeout);
     } else if (shouldRunFirst) {
       fn(...args);
     }
 
-    // eslint-disable-next-line no-restricted-globals
-    waitingTimeout = self.setTimeout(() => {
+    timeout = self.setTimeout(() => {
+      timeout = undefined;
       if (shouldRunLast) {
-        fn(...args);
+        fn(...lastArgs);
       }
-
-      waitingTimeout = undefined;
     }, ms);
   };
+
+  debounced.cancel = () => {
+    if (timeout != null) {
+      clearTimeout(timeout);
+      timeout = undefined;
+    }
+  };
+
+  debounced.flush = () => {
+    if (timeout != null) {
+      clearTimeout(timeout);
+      timeout = undefined;
+      fn(...lastArgs);
+    }
+  };
+
+  return debounced as F & { cancel(): void; flush(): void };
 }
 
 export function throttle<F extends AnyToVoidFunction>(
