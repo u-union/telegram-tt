@@ -1,5 +1,6 @@
 import { RefObject, useCallback, useEffect, useRef, useSignal } from "../../../lib/teact/teact";
 import { debounce } from "../../../util/schedulers";
+import { INPUT_HISTORY_IDB_STORE } from "../../../util/browser/idb";
 import { getCaretPosition, setCaretPosition } from "../../../util/selection";
 
 type HtmlInputHistory = {
@@ -7,7 +8,7 @@ type HtmlInputHistory = {
   html: string;
 }
 
-const HTML_INPUT_HISTORY_DEBOUNCE_MS = 400;
+const HTML_INPUT_HISTORY_DEBOUNCE_MS = 500;
 const HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH = 4096 * 100; // ~400KB
 
 function pruneHistory(history: HtmlInputHistory[], maxTotalLength: number): HtmlInputHistory[] {
@@ -29,7 +30,7 @@ const observeInnerHtmlChangeOnce = (
     callback();
   });
   observer.observe(element, { childList: true, subtree: true, characterData: true });
-}  
+}
 
 export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>, chatId: string) {
   const mounted = useRef(false);
@@ -46,6 +47,20 @@ export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>,
   const inputSnapshotListRef = useRef<HtmlInputHistory[]>([]);
   const currentSnapshotIndexRef = useRef<number>(null);
 
+  // Load the input history from IndexedDB on chatId change
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const loaded = await INPUT_HISTORY_IDB_STORE.get<HtmlInputHistory[]>(chatId) || [];
+
+      if (cancelled) return;
+      inputSnapshotListRef.current = loaded;
+      currentSnapshotIndexRef.current = loaded.length - 1;
+    }
+    )();
+    return () => { cancelled = true };
+  }, [chatId]);
+
   // Save input snapshot with debounce to saving on every keystroke
   const debouncedPush = useCallback(
     debounce((html: string) => {
@@ -60,9 +75,11 @@ export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>,
         caretPosition: getCaretPosition(inputRef.current),
         html,
       };
+
       inputSnapshotListRef.current.push(htmlInputHistoryItem);
       inputSnapshotListRef.current = pruneHistory(inputSnapshotListRef.current, HTML_INPUT_HISTORY_MAX_TOTAL_LENGTH);
       currentSnapshotIndexRef.current = inputSnapshotListRef.current.length - 1;
+      INPUT_HISTORY_IDB_STORE.set(chatId, inputSnapshotListRef.current);
     }, HTML_INPUT_HISTORY_DEBOUNCE_MS, false),
     [chatId, mounted]
   )
@@ -81,7 +98,7 @@ export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>,
   /** @returns isLastAction */
   const undoHtml = (): boolean => {
     const index = currentSnapshotIndexRef.current;
-    if (index === null || index === 0) {
+    if (!index || index === -1) {
       return true;
     }
 
@@ -96,6 +113,7 @@ export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>,
         inputRef.current && setCaretPosition(inputRef.current, prevHtmlInputHistoryItem.caretPosition);
       });
     }
+
     return false;
   }
 
@@ -116,6 +134,7 @@ export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>,
         inputRef.current && setCaretPosition(inputRef.current, nextHtmlInputHistoryItem.caretPosition);
       });
     }
+
     return false;
   }
 
@@ -139,6 +158,13 @@ export default function useHtmlInput(inputRef: RefObject<HTMLDivElement | null>,
           // Flush debounced push to save the current input
           debouncedPush.flush();
         }
+      } else if (
+        (event.key === 'Backspace'
+          || event.key.toLowerCase() === 'v'
+          || event.key.toLowerCase() === 'x')
+        && (event.ctrlKey || event.metaKey)) {
+        // On delete/paste/cut with Ctrl/Meta, flush the debounced push
+        debouncedPush.flush();
       } else {
         // Reset the flag if any other key is pressed
         isDelimiterKeyPressed.current = false;
