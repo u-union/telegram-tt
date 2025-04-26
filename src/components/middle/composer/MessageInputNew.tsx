@@ -37,6 +37,7 @@ import TextTimer, { TextTimerDetails } from '../../ui/TextTimer';
 import TextFormatter from './TextFormatter.async';
 
 import './MessageInputNew.scss';
+import CustomInput from "./CustomInput";
 
 const INPUT_SCROLLER_CLASS = 'input-scroller';
 
@@ -248,7 +249,8 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
    */
   useLayoutEffect(() => {
     const html = isActive ? cleanHtmlInput(getHtmlInputText()) : '';
-
+    
+    if (!inputRef.current) return;
     if (html !== inputRef.current!.innerHTML) {
       requestMutation(() => {
         inputRef.current!.innerHTML = html;
@@ -344,7 +346,6 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       const { html, caret } = parseMarkdown(innerHTML || '', oldCaret);
       inputRef.current!.innerHTML = html;
       setCaretPosition(inputRef.current!, caret);
-      // End
 
       onInputHtmlChange(html);
     }
@@ -599,7 +600,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     <div id={id} className={messageInputClass} onClick={handleMessageInputClick}>
       <div className={inputScrollerClass} >
         <div className={inputScrollerContentClass}>
-          <div
+          {/* <div
             className={inputBoxClass}
             id={editableInputId}
             aria-label={placeholder}
@@ -616,6 +617,11 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
             onTouchCancel={IS_ANDROID ? debouncedHandleTextFormatterDisplay : undefined}
             onFocus={!isNeedPremiumInStory ? onInputBoxFocus : undefined}
             onBlur={!isNeedPremiumInStory ? onInputBoxBlur : undefined}
+          /> */}
+          <CustomInput
+            className={inputBoxClass}
+            messageSendKeyCombo={messageSendKeyCombo}
+            onChange={onInputHtmlChange}
           />
           {!forcedPlaceholder && (<span
             ref={inputBoxPlaceholderRef}
