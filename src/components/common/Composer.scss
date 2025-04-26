@@ -573,7 +573,7 @@
   @include mixins.adapt-padding-to-scrollbar(0.5rem);
 
   &:not(.shown) {
-    display: none;
+    display: none !important;
   }
 
   &.open {

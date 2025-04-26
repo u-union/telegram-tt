@@ -17,7 +17,7 @@ const PATTERNS: Array<{ delim: string; tag: string, attr?: string[][] }> = [
   // { delim: "`", tag: "code", attr: [['class', 'text-entity-code']] }, // pre issue (```)
   { delim: "||", tag: "span", attr: [['class', 'spoiler'], ['data-entity-type', 'MessageEntitySpoiler']] },
   { delim: "```", tag: "pre" },
-  { delim: ">", tag: "blockquote", attr: [['class', 'blockquote']] },
+  // { delim: ">", tag: "blockquote", attr: [['class', 'blockquote']] },
 ];
 
 export const getDelimByTag = (tag: string): string => {
@@ -149,7 +149,7 @@ export default function parseMarkdown(html: string, caret: number): ParseResult 
   // Clean up the HTML input
   html = cleanHtmlInput(html);
 
-  // 0) handle triple‐backtick code blocks globally
+  // handle code blocks globally
   const codeBlockRe = /```(\w*)\n([\s\S]*?)\n```/;
   const cbMatch = codeBlockRe.exec(html);
   if (cbMatch) {
@@ -177,32 +177,49 @@ export default function parseMarkdown(html: string, caret: number): ParseResult 
     html = html.slice(0, idx) + replacement + html.slice(idx + full.length);
   }
 
-  // 1) Build a temporary wrapper
+  // handle quote blocks globally (not working for quote inside other)
+  // const blockquoteRegex = /(?:^|\n)(?:&gt;|>) ([\s\S]{1,}?)(?=\n|$|</)/g;
+  // const blockquoteMatch = blockquoteRegex.exec(html);
+  // if (blockquoteMatch) {
+  //   const [full, content] = blockquoteMatch;
+  //   console.warn(full, content, blockquoteMatch);
+  //   const idx = blockquoteMatch.index;
+
+  //   // build the exact same HTML structure your QuoteBlock component uses
+  //   const replacement = `<blockquote data-can-collapse="false" class="blockquote">` + content +`</blockquote>\n`;
+
+  //   // adjust caret if it was after the blockquote
+  //   if (caret > idx + full.length) {
+  //     caret += replacement.length - full.length;
+  //   }
+
+  //   html = html.slice(0, idx) + replacement + html.slice(idx + full.length);
+  // }
+
+  // Temporary wrapper
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
 
-  // 2) Find the text node + local offset
+  // Find the text node + local offset
   const hit = findTextNodeAtOffset(wrapper, caret);
   if (!hit) {
-    // nothing to do
     return { html, caret };
   }
 
-  // 3) Process markdown in that node only
+  // Process markdown in that node only
   const { htmlFrag, newOffset } = processNodeText(
     hit.node.textContent || '',
     hit.offsetInNode
   );
 
-  // 4) Replace the old text‐node with the fragment
+  // Replace the old text‐node with the fragment
   const range = document.createRange();
   range.setStart(hit.node, 0);
   range.setEnd(hit.node, hit.node.textContent?.length || 0);
   const frag = range.createContextualFragment(htmlFrag);
   hit.node.parentNode!.replaceChild(frag, hit.node);
 
-  // 5) Compute new absolute caret: everything before this node
-  //    is unchanged in text length, plus newOffset
+  // Compute new absolute caret
   let absolute = hit.beforeLength + newOffset;
 
   return { html: wrapper.innerHTML, caret: absolute };
