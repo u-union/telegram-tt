@@ -521,13 +521,13 @@ const TextFormatter: FC<OwnProps> = ({
 
     // With new approach, appling formating is not an issue for strike and monospace
     // However, monospace is not working properly with link (onClick text is being copy only) and with bold (<b> applied but not displayed)
-    if (key === 'monospace' || key === 'quote') {
+    if (key === 'monospace') {
       if (Object.keys(selectedTextFormats).some(
         (fKey) => fKey !== key && Boolean(selectedTextFormats[fKey as keyof ISelectedTextFormats]),
       )) {
         return 'disabled';
       }
-    } else if (selectedTextFormats.monospace || selectedTextFormats.quote) {
+    } else if (selectedTextFormats.monospace) {
       return 'disabled';
     }
 
