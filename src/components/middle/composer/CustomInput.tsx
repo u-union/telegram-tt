@@ -270,7 +270,6 @@ const CustomInput: FC<OwnProps> = ({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
       >
-        <p>Ali tutai</p>
         {items.map((item, i) => {
           const isSel = !!selection && i >= selection.start && i < selection.end;
           const beforeCaret = i === caretPosition;

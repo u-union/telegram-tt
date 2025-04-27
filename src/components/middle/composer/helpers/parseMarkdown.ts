@@ -15,7 +15,7 @@ const PATTERNS: Array<{ delim: string; tag: string, attr?: string[][] }> = [
   { delim: "~~", tag: "s" },
   { delim: "~~", tag: "strike" },
   // { delim: "`", tag: "code", attr: [['class', 'text-entity-code']] }, // pre issue (```)
-  { delim: "||", tag: "span", attr: [['class', 'spoiler'], ['data-entity-type', 'MessageEntitySpoiler']] },
+  { delim: "||", tag: "span", attr: [['class', 'spoiler markdown-text'], ['data-entity-type', 'MessageEntitySpoiler']] },
   { delim: "```", tag: "pre" },
   // { delim: ">", tag: "blockquote", attr: [['class', 'blockquote']] },
 ];
@@ -67,8 +67,7 @@ function processNodeText(
   text: string,
   caretInNode: number
 ): { htmlFrag: string; newOffset: number } {
-  const original = text;
-  let nodeHtml = original;
+  let nodeHtml = text;
   let localCaret = caretInNode;
 
   PATTERNS.forEach(({ delim, tag, attr }) => {
@@ -88,38 +87,23 @@ function processNodeText(
       const before = nodeHtml.slice(0, idx);
       const after = nodeHtml.slice(end + delim.length);
       const attrs = attr ? attr.map(([k, v]) => `${k}="${v}"`).join(' ') : '';
-      const frag = `<${tag}${attrs ? ' ' + attrs : ''}>${content}</${tag}>`;
-      const removedLen = delim.length * 2;
+      const frag = `<${tag}${attrs ? ' ' + attrs : ''} class="markdown-text">${content}</${tag}>`;
 
       // adjust localCaret
       if (localCaret <= idx) {
         // no change
-      } else if (localCaret >= end + delim.length) {
-        localCaret -= removedLen;
       } else {
-        // inside
-        const inside = localCaret - idx;
-        if (inside <= delim.length) {
-          localCaret = idx;
-        } else if (inside >= delim.length + content.length) {
-          localCaret = idx + content.length;
-        } else {
-          localCaret = idx + (inside - delim.length);
-        }
+        localCaret -= delim.length * 2;
       }
 
       nodeHtml = before + frag + after;
+
+      // append a single space so typing continues outside the tag
+      nodeHtml += ' ';
+      localCaret += 1;
       idx = nodeHtml.indexOf(delim, idx + frag.length);
     }
   });
-
-  // only if caret was at end of the ORIGINAL text
-  // and we actually changed something (nodeHtml ≠ original),
-  // append a single space so typing continues outside the tag
-  if (caretInNode === original.length && nodeHtml !== original) {
-    nodeHtml += ' ';
-    localCaret += 1;
-  }
 
   return { htmlFrag: nodeHtml, newOffset: localCaret };
 }
@@ -139,7 +123,6 @@ export const cleanHtmlInput = (html: string): string => {
   return processedText;
 }
 
-
 /**
  * Main entry: take your DIV.innerHTML + old caret (flattened),
  * parse only the text‐node at that position, preserve other tags,
@@ -148,6 +131,9 @@ export const cleanHtmlInput = (html: string): string => {
 export default function parseMarkdown(html: string, caret: number): ParseResult {
   // Clean up the HTML input
   html = cleanHtmlInput(html);
+
+  // Delete all data-markdown attr from html ("**" or "__", etc. messing up parser)
+  html = html.replace(/ data-markdown="[^"]*"/g, '');
 
   // handle code blocks globally
   const codeBlockRe = /```(\w*)\n([\s\S]*?)\n```/;
@@ -158,7 +144,7 @@ export default function parseMarkdown(html: string, caret: number): ParseResult 
 
     // build the exact same HTML structure your CodeBlock component uses
     const langPretty = getPrettyCodeLanguageName(lang);
-    const title = langPretty ? `<p class="code-title">${langPretty}</p>` : '';
+    const title = langPretty ? `<p class="code-title" contentEditable="false">${langPretty}</p>` : '';
     const replacement =
       `<div class="CodeBlock">` +
       title +
@@ -177,50 +163,25 @@ export default function parseMarkdown(html: string, caret: number): ParseResult 
     html = html.slice(0, idx) + replacement + html.slice(idx + full.length);
   }
 
-  // handle quote blocks globally (not working for quote inside other)
-  // const blockquoteRegex = /(?:^|\n)(?:&gt;|>) ([\s\S]{1,}?)(?=\n|$|</)/g;
-  // const blockquoteMatch = blockquoteRegex.exec(html);
-  // if (blockquoteMatch) {
-  //   const [full, content] = blockquoteMatch;
-  //   console.warn(full, content, blockquoteMatch);
-  //   const idx = blockquoteMatch.index;
+  // handle quote blocks globally
+  const blockquoteRegex = /(?:^|\n)(?:&gt;|>) ([\s\S]{1,}?)(?=\n$)/g;
 
-  //   // build the exact same HTML structure your QuoteBlock component uses
-  //   const replacement = `<blockquote data-can-collapse="false" class="blockquote">` + content +`</blockquote>\n`;
+  const blockquoteMatch = blockquoteRegex.exec(html);
+  if (blockquoteMatch) {
+    const [full, content] = blockquoteMatch;
+    const idx = blockquoteMatch.index;
 
-  //   // adjust caret if it was after the blockquote
-  //   if (caret > idx + full.length) {
-  //     caret += replacement.length - full.length;
-  //   }
+    // build the exact same HTML structure your QuoteBlock component uses
+    const replacement = `<blockquote data-can-collapse="false" class="blockquote">` + content +`</blockquote>`;
 
-  //   html = html.slice(0, idx) + replacement + html.slice(idx + full.length);
-  // }
+    // adjust caret if it was after the fenced block
+    // todo
 
-  // Temporary wrapper
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = html;
-
-  // Find the text node + local offset
-  const hit = findTextNodeAtOffset(wrapper, caret);
-  if (!hit) {
-    return { html, caret };
+    html = html.slice(0, idx) + replacement + html.slice(idx + full.length);
   }
 
   // Process markdown in that node only
-  const { htmlFrag, newOffset } = processNodeText(
-    hit.node.textContent || '',
-    hit.offsetInNode
-  );
+  const { htmlFrag: newHtml, newOffset } = processNodeText(html || '', caret);
 
-  // Replace the old text‐node with the fragment
-  const range = document.createRange();
-  range.setStart(hit.node, 0);
-  range.setEnd(hit.node, hit.node.textContent?.length || 0);
-  const frag = range.createContextualFragment(htmlFrag);
-  hit.node.parentNode!.replaceChild(frag, hit.node);
-
-  // Compute new absolute caret
-  let absolute = hit.beforeLength + newOffset;
-
-  return { html: wrapper.innerHTML, caret: absolute };
+  return { html: newHtml, caret: newOffset };
 }

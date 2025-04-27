@@ -12,6 +12,7 @@ import { ensureProtocol } from '../../../util/ensureProtocol';
 import getKeyFromEvent from '../../../util/getKeyFromEvent';
 import stopEvent from '../../../util/stopEvent';
 import { getAbsoluteRangeOffsets } from '../../../util/selection';
+import { cleanHtmlInput } from './helpers/parseMarkdown';
 
 import useFlag from '../../../hooks/useFlag';
 import useLastCallback from '../../../hooks/useLastCallback';
@@ -81,7 +82,7 @@ const MAX_REGRESSION_DEPTH = 50;
  */
 type SlpChar = {
   char: string;
-  format: Set<string>;
+  format: Array<string>; // Multiple quotes workaround (Set was used before)
   href?: string;
   img?: {
     src: string;
@@ -190,33 +191,41 @@ const TextFormatter: FC<OwnProps> = ({
    * Handles apply/remove text format
    * @param range - selected range
    */
-  const handleFormat = useLastCallback((format: keyof ISelectedTextFormats, attr?: object) => {
+  const handleFormat = useLastCallback((format: keyof ISelectedTextFormats, attr?: object, allowMultiple: boolean = false) => {
     if (!selectedRange) return;
 
     // Find absolute start and end offsets
     const { start: startOffset, end: endOffset} = getAbsoluteRangeOffsets(selectedRange, editableInputId);
 
     // Parse HTML into SLP format
-    const html = getHtml();
+    const html = cleanHtmlInput(getHtml()); // <br> tags crashes the parser
     const slpTextArray = parseHtmlIntoSLFormat(html);
 
     if (slpTextArray.length === 0 || endOffset >= slpTextArray.length) {
-      console.error('Error while parsing HTML into SLP format, SLP array:', slpTextArray, '. Selection start:', startOffset, 'end:', endOffset);
+      console.error('Error: while parsing HTML into SLP format, SLP array:', slpTextArray, '. Selection start:', startOffset, 'end:', endOffset, 'html:', html);
       return;
     }
 
     // Apply/remove format
     const tagName = getTagByFormat(format);
+
     for (let i = startOffset; i <= endOffset; i++) {
       const char = slpTextArray[i];
-      if (selectedTextFormats[format]) {
-        char.format.delete(tagName);
+      if (selectedTextFormats[format] && !allowMultiple) { // Multiple quotes workaround
+        // Remove format
+        const index = char.format.indexOf(tagName);
+        if (index !== -1) {
+          slpTextArray[i].format.splice(index, 1);
+        }
       } else {
-        char.format.add(tagName);
+        // Add format
+        slpTextArray[i].format.push(tagName); // Multiple quotes workaround
       }
     }
+
     // Convert SLP format to HTML
     const newHtml = parseSLFormatIntoHtml(slpTextArray, attr);
+
 
     const inputDiv = document.getElementById(editableInputId);
     if (!inputDiv) return;
@@ -286,7 +295,7 @@ const TextFormatter: FC<OwnProps> = ({
 
     const slpArray: SlpChar[] = [];
     let regression_depth = 0;
-    const getSlfFromNode = (children: ChildNode[], parentFormat: Set<string>) => {
+    const getSlfFromNode = (children: ChildNode[], parentFormat: Array<string>) => {
       // Prevent infinite recursion
       regression_depth++;
       if (regression_depth > MAX_REGRESSION_DEPTH) {
@@ -300,7 +309,7 @@ const TextFormatter: FC<OwnProps> = ({
           const text = child.textContent || '';
           const textArray = text.split('');
           textArray.forEach((char) => {
-            slpArray.push({ char, format: new Set([...parentFormat]) });
+            slpArray.push({ char, format: [...parentFormat] });
           });
         } else if (child.nodeType === Node.ELEMENT_NODE) {
           const element = child as HTMLElement;
@@ -310,7 +319,7 @@ const TextFormatter: FC<OwnProps> = ({
           if (format === getTagByFormat('image')) {
             slpArray.push({
               char: '',
-              format: new Set([...parentFormat, format]),
+              format: [...parentFormat, format],
               img: {
                 src: element.getAttribute('src') || '',
                 alt: element.getAttribute('alt') || '',
@@ -325,12 +334,12 @@ const TextFormatter: FC<OwnProps> = ({
           }
 
           const formatArray = format ? [format] : [];
-          getSlfFromNode(Array.from(element.childNodes), new Set([...parentFormat, ...formatArray]));
+          getSlfFromNode(Array.from(element.childNodes), [...parentFormat, ...formatArray]);
         }
       });
     }
 
-    getSlfFromNode(Array.from(root.childNodes), new Set());
+    getSlfFromNode(Array.from(root.childNodes), []);
     return slpArray;
   });
 
@@ -345,7 +354,7 @@ const TextFormatter: FC<OwnProps> = ({
       let length = 0;
       if (format === 'IMG') return 1;
       for (let i = 0; i < array.length; i++) {
-        if (array[i].format.has(format)) {
+        if (array[i].format.includes(format)) {
           length++;
         } else {
           break;
@@ -390,11 +399,11 @@ const TextFormatter: FC<OwnProps> = ({
       }
 
       for (let i = 0; i < array.length; i++) {
-        if (array[i].format.size === 0) {
+        if (array[i].format.length === 0) {
           mainEl.appendChild(document.createTextNode(array[i].char));
         } else {
           let maxLengthFormat: { format: string, length: number } = { format: '', length: 0 };
-          array[i].format.forEach((format) => {
+          array[i].format.forEach((format, index) => {
             const length = getFormatLength(format, array.slice(i));
             if (length > maxLengthFormat.length) {
               maxLengthFormat = { format, length };
@@ -403,7 +412,12 @@ const TextFormatter: FC<OwnProps> = ({
 
           // Delete format from elements i -> i + formatLengths[maxFormatLengthId] and parse it
           const subArray = array.slice(i, i + maxLengthFormat.length)
-          subArray.forEach((el) => el.format.delete(maxLengthFormat.format));
+          subArray.forEach((el) => {
+            const idx = el.format.indexOf(maxLengthFormat.format);
+            if (idx !== -1) {
+              el.format.splice(idx, 1);
+            }
+          });
           const el = parseSlpArray(subArray, maxLengthFormat.format);
           mainEl.appendChild(el);
 
@@ -423,7 +437,14 @@ const TextFormatter: FC<OwnProps> = ({
   const handleUnderlineText = () => handleFormat('underline');
   const handleStrikethroughText = () => handleFormat('strikethrough');
   const handleMonospaceText = () => handleFormat('monospace');
-  const handleBlockquoteText = () => handleFormat('quote');
+  const handleBlockquoteText = (remove?: Boolean) => {
+    if (remove) {
+      handleFormat('quote');
+    } else {
+      handleFormat('quote', {}, true);
+    }
+  };
+
   const handleSpoilerText = () => handleFormat('spoiler');
   const handleLinkText = () => {
     const formattedLinkUrl = (ensureProtocol(linkUrl) || '').split('%').map(encodeURI).join('%');
@@ -574,11 +595,19 @@ const TextFormatter: FC<OwnProps> = ({
         </Button>
         <Button
           color="translucent"
-          ariaLabel="Quote"
+          ariaLabel={selectedTextFormats.quote ? "Remove Quote" : "Quote"}
           className={getFormatButtonClassName('quote')}
-          onClick={handleBlockquoteText}
+          onClick={() => handleBlockquoteText(true)}
         >
-          <Icon name="quote" />
+          <Icon name={selectedTextFormats.quote ? "quote-remove" : "quote"} />
+        </Button>
+        <Button
+          className={buildClassName('Button-quote-add', !selectedTextFormats.quote && 'hide-quote')}
+          color="translucent"
+          ariaLabel="Add Quote"
+          onClick={() => handleBlockquoteText(false)}
+        >
+          <Icon name="quote-add" />
         </Button>
         <div className="TextFormatter-divider" />
         <Button

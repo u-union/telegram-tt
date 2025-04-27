@@ -35,9 +35,10 @@ import captureKeyboardListeners from "../../../util/captureKeyboardListeners";
 import Button from '../../ui/Button';
 import TextTimer, { TextTimerDetails } from '../../ui/TextTimer';
 import TextFormatter from './TextFormatter.async';
+import CustomInput from "./CustomInput";
 
 import './MessageInputNew.scss';
-import CustomInput from "./CustomInput";
+
 
 const INPUT_SCROLLER_CLASS = 'input-scroller';
 
@@ -346,7 +347,6 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       const { html, caret } = parseMarkdown(innerHTML || '', oldCaret);
       inputRef.current!.innerHTML = html;
       setCaretPosition(inputRef.current!, caret);
-
       onInputHtmlChange(html);
     }
   });
@@ -391,9 +391,10 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
       });
     }
 
-    if (formattedParent) {      
+    if (formattedParent) {
+      const isMarkdown = !!formattedParent.classList.contains('markdown-text'); // delete to highlight any formatted text
       // Only highlight if selection is collapsed (no selected text)
-      if (formattedParent.id !== EDITABLE_INPUT_ID && range && range.collapsed) {
+      if (formattedParent.id !== EDITABLE_INPUT_ID && range && range.collapsed && isMarkdown) {
       // if (formattedParent && formattedParent.id === 'markdown' && range && range.collapsed) {
           requestMutation(() => {
           formattedParent.classList.add('selected');
@@ -435,7 +436,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
           const inputLength = inputRef.current?.textContent?.length;
 
           // Check that currently not in the editable input but inside the format tag
-          if (formattedParent !== editableInputId && caretPose && inputLength) {
+          if (formattedParent !== editableInputId && (caretPose || caretPose === 0) && inputLength) {
             const isAtEnd = key === 'ArrowRight' &&
               range.startOffset === container.textContent?.length;
             const isAtStart = key === 'ArrowLeft' &&
@@ -600,7 +601,7 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
     <div id={id} className={messageInputClass} onClick={handleMessageInputClick}>
       <div className={inputScrollerClass} >
         <div className={inputScrollerContentClass}>
-          {/* <div
+          <div
             className={inputBoxClass}
             id={editableInputId}
             aria-label={placeholder}
@@ -617,12 +618,23 @@ const MessageInputNew: FC<OwnProps & StateProps> = ({
             onTouchCancel={IS_ANDROID ? debouncedHandleTextFormatterDisplay : undefined}
             onFocus={!isNeedPremiumInStory ? onInputBoxFocus : undefined}
             onBlur={!isNeedPremiumInStory ? onInputBoxBlur : undefined}
-          /> */}
-          <CustomInput
-            className={inputBoxClass}
-            messageSendKeyCombo={messageSendKeyCombo}
-            onChange={onInputHtmlChange}
           />
+          {/* <CustomInput
+            className={inputBoxClass}
+            id={editableInputId}
+            aria-label={placeholder}
+            // ref={inputRef} // @todo: handle all ref from here inside CustomInput
+            isEditable={isAttachmentModalInput || canSendPlainText}
+            onClick={handleHighlightMarkdown}
+            // onChange={handleInputBoxChange} // @todo: handle all change from here inside CustomInput
+            onKeyDown={handleInputBoxKeyDown}
+            onKeyUp={handleInputBoxKeyUp}
+            onMouseDown={handleInputBoxMouseDown}
+            onContextMenu={IS_ANDROID ? handleAndroidContextMenu : undefined}
+            onTouchCancel={IS_ANDROID ? debouncedHandleTextFormatterDisplay : undefined}
+            onFocus={!isNeedPremiumInStory ? onInputBoxFocus : undefined}
+            onBlur={!isNeedPremiumInStory ? onInputBoxBlur : undefined}
+          /> */}
           {!forcedPlaceholder && (<span
             ref={inputBoxPlaceholderRef}
             className={inputPlaceholderClass}

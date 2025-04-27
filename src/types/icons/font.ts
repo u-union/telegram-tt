@@ -175,6 +175,8 @@ export type FontIconName =
   | 'poll'
   | 'previous'
   | 'privacy-policy'
+  | 'quote-add'
+  | 'quote-remove'
   | 'quote-text'
   | 'quote'
   | 'readchats'
@@ -442,6 +444,8 @@ export enum Icons {
   Poll = 'poll',
   Previous = 'previous',
   PrivacyPolicy = 'privacy-policy',
+  QuoteAdd = 'quote-add',
+  QuoteRemove = 'quote-remove',
   QuoteText = 'quote-text',
   Quote = 'quote',
   Readchats = 'readchats',

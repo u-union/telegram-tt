@@ -112,7 +112,7 @@ function preprocessText(html: string, withMarkdownLinks: boolean): string {
   // processedText = processedText.replace(blockquoteRegex, '<blockquote data-can-collapse="false">$2</blockquote>\n');
 
   // Delete <p class="code-title">...</p> tags (LiveMarkdown)
-  const codeTitleRegex = new RegExp('<p class="code-title">.*?</p>', 'g');
+  const codeTitleRegex = new RegExp('<p\\s+class=["\']code-title["\'](?:\\s+[^>]*)?>.*?</p>', 'g'); // fix for CodeBlock as Title being duplicated after
   processedText = processedText.replace(codeTitleRegex, '');
 
   if (withMarkdownLinks) {

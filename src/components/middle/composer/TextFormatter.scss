@@ -130,5 +130,14 @@
       opacity: 0.5;
       pointer-events: none;
     }
+
+    &-quote-add {
+      transition: width 0.15s ease, padding 0.15s ease, margin 0.15s ease;
+      &.hide-quote {
+        width: 0;
+        padding: 0;
+        margin: 0;
+      }
+    }
   }
 }
